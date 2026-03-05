@@ -75,6 +75,12 @@ def match_markets(
         slug = pm.get("slug", "")
         question = pm.get("question", "")
 
+        # Skip spread, totals, and exotic markets — only match h2h (moneyline)
+        if any(x in slug for x in ["-spread-", "-total-", "-exact-", "-halftime-", "-more-market"]):
+            continue
+        if any(x in question.lower() for x in ["o/u ", "spread", "over/under", "exact score"]):
+            continue
+
         # Extract team names from Polymarket slug/question
         pm_teams = _extract_teams_from_slug(slug, question)
         if not pm_teams:

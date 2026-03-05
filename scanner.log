@@ -1,0 +1,152 @@
+22:39:51 INFO  root                 *** DRY RUN MODE - no real orders will be placed ***
+22:39:51 INFO  src.scanner          ============================================================
+22:39:51 INFO  src.scanner          Scan cycle at 2026-03-05 21:39:51 UTC
+22:39:51 WARNING src.polymarket_client Failed to fetch epl markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch bun markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch sea markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch fl1 markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch lal markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch ucl markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch uel markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch nba markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch nfl markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch cs2 markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch atp markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 WARNING src.polymarket_client Failed to fetch wta markets: 422 Client Error: Unprocessable Entity for url: https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&order=volume_24hr
+22:39:52 INFO  src.polymarket_client Found 0 active sports markets
+22:39:52 INFO  src.scanner          Step 1: 0 Polymarket sports markets
+22:39:53 INFO  src.odds_client      Fetched 19 events for soccer_epl (API requests remaining: 19999)
+22:39:53 INFO  src.odds_client      Fetched 18 events for soccer_germany_bundesliga (API requests remaining: 19998)
+22:39:53 INFO  src.odds_client      Fetched 20 events for soccer_italy_serie_a (API requests remaining: 19997)
+22:39:53 INFO  src.odds_client      Fetched 17 events for soccer_france_ligue_one (API requests remaining: 19996)
+22:39:54 INFO  src.odds_client      Fetched 21 events for soccer_spain_la_liga (API requests remaining: 19995)
+22:39:54 INFO  src.odds_client      Fetched 8 events for soccer_uefa_champs_league (API requests remaining: 19994)
+22:39:54 INFO  src.odds_client      Fetched 8 events for soccer_uefa_europa_league (API requests remaining: 19993)
+22:39:54 INFO  src.odds_client      Fetched 9 events for basketball_nba (API requests remaining: 19992)
+22:39:54 INFO  src.odds_client      Fetched 0 events for americanfootball_nfl (API requests remaining: 19992)
+22:39:54 INFO  src.odds_client      Fetched 0 events for tennis_atp_french_open (API requests remaining: 19992)
+22:39:55 INFO  src.odds_client      Fetched 0 events for tennis_wta_french_open (API requests remaining: 19992)
+22:39:55 INFO  src.scanner          Step 2: 120 odds events across 11 sports
+22:39:55 INFO  src.matcher          Matched 0 Polymarket markets to external odds
+22:39:55 INFO  src.scanner          Step 3: 0 matched market pairs
+22:39:55 INFO  src.scanner          Step 4: 0 actionable opportunities (min edge 0.0%)
+22:41:30 INFO  root                 *** DRY RUN MODE - no real orders will be placed ***
+22:41:30 INFO  src.scanner          ============================================================
+22:41:30 INFO  src.scanner          Scan cycle at 2026-03-05 21:41:30 UTC
+22:41:31 INFO  src.polymarket_client Found 3915 active sports markets
+22:41:31 INFO  src.scanner          Step 1: 3915 Polymarket sports markets
+22:41:32 INFO  src.odds_client      Fetched 19 events for soccer_epl (API requests remaining: 19991)
+22:41:32 INFO  src.odds_client      Fetched 18 events for soccer_germany_bundesliga (API requests remaining: 19990)
+22:41:32 INFO  src.odds_client      Fetched 20 events for soccer_italy_serie_a (API requests remaining: 19989)
+22:41:32 INFO  src.odds_client      Fetched 17 events for soccer_france_ligue_one (API requests remaining: 19988)
+22:41:32 INFO  src.odds_client      Fetched 21 events for soccer_spain_la_liga (API requests remaining: 19987)
+22:41:32 INFO  src.odds_client      Fetched 8 events for soccer_uefa_champs_league (API requests remaining: 19986)
+22:41:33 INFO  src.odds_client      Fetched 8 events for soccer_uefa_europa_league (API requests remaining: 19985)
+22:41:33 INFO  src.odds_client      Fetched 9 events for basketball_nba (API requests remaining: 19984)
+22:41:33 INFO  src.odds_client      Fetched 0 events for americanfootball_nfl (API requests remaining: 19984)
+22:41:33 INFO  src.odds_client      Fetched 0 events for tennis_atp_french_open (API requests remaining: 19984)
+22:41:33 INFO  src.odds_client      Fetched 0 events for tennis_wta_french_open (API requests remaining: 19984)
+22:41:33 INFO  src.scanner          Step 2: 120 odds events across 11 sports
+22:41:34 INFO  src.matcher          Matched 278 Polymarket markets to external odds
+22:41:34 INFO  src.scanner          Step 3: 278 matched market pairs
+22:41:34 INFO  src.scanner          Step 4: 195 actionable opportunities (min edge 0.0%)
+22:41:34 INFO  src.scanner            #1: lal-osa-mal-2026-03-06-spread-away-2pt5 [RCD Mallorca] | poly=0.015 fair=0.188 edge=+1193.1% | size=$219
+22:41:34 INFO  src.scanner            #2: bun-lei-aug-2026-03-07-spread-away-2pt5 [FC Augsburg] | poly=0.013 fair=0.146 edge=+1069.2% | size=$169
+22:41:34 INFO  src.scanner            #3: lal-sev-ray-2026-03-08-spread-home-2pt5 [Sevilla FC] | poly=0.035 fair=0.378 edge=+965.5% | size=$444
+22:41:34 INFO  src.scanner            #4: lal-get-bet-2026-03-07-spread-away-2pt5 [Real Betis Balompié] | poly=0.034 fair=0.337 edge=+891.5% | size=$392
+22:41:34 INFO  src.scanner            #5: bun-pau-ein-2026-03-08-spread-away-2pt5 [Eintracht Frankfurt] | poly=0.038 fair=0.371 edge=+862.5% | size=$432
+22:41:34 INFO  src.scanner            #6: lal-get-bet-2026-03-07-spread-home-2pt5 [Getafe CF] | poly=0.036 fair=0.326 edge=+804.9% | size=$376
+22:41:34 INFO  src.scanner            #7: lal-vil-elc-2026-03-08-spread-away-2pt5 [Elche CF] | poly=0.018 fair=0.150 edge=+757.2% | size=$169
+22:41:34 INFO  src.scanner            #8: lal-esp-ovi-2026-03-09-spread-away-2pt5 [Real Oviedo] | poly=0.025 fair=0.214 edge=+755.1% | size=$242
+22:41:34 INFO  src.scanner            #9: bun-uni-wer-2026-03-08-spread-away-2pt5 [SV Werder Bremen] | poly=0.034 fair=0.283 edge=+746.1% | size=$323
+22:41:34 INFO  src.scanner            #10: lal-sev-ray-2026-03-08-spread-away-2pt5 [Rayo Vallecano de Madrid] | poly=0.038 fair=0.312 edge=+711.3% | size=$356
+22:41:40 INFO  root                 *** DRY RUN MODE - no real orders will be placed ***
+22:41:40 INFO  src.scanner          ============================================================
+22:41:40 INFO  src.scanner          Scan cycle at 2026-03-05 21:41:40 UTC
+22:41:41 INFO  src.polymarket_client Found 3915 active sports markets
+22:41:41 INFO  src.scanner          Step 1: 3915 Polymarket sports markets
+22:41:42 INFO  src.odds_client      Fetched 19 events for soccer_epl (API requests remaining: 19983)
+22:41:42 INFO  src.odds_client      Fetched 18 events for soccer_germany_bundesliga (API requests remaining: 19982)
+22:41:42 INFO  src.odds_client      Fetched 20 events for soccer_italy_serie_a (API requests remaining: 19981)
+22:41:42 INFO  src.odds_client      Fetched 17 events for soccer_france_ligue_one (API requests remaining: 19980)
+22:41:43 INFO  src.odds_client      Fetched 21 events for soccer_spain_la_liga (API requests remaining: 19979)
+22:41:43 INFO  src.odds_client      Fetched 8 events for soccer_uefa_champs_league (API requests remaining: 19978)
+22:41:43 INFO  src.odds_client      Fetched 8 events for soccer_uefa_europa_league (API requests remaining: 19977)
+22:41:43 INFO  src.odds_client      Fetched 9 events for basketball_nba (API requests remaining: 19976)
+22:41:43 INFO  src.odds_client      Fetched 0 events for americanfootball_nfl (API requests remaining: 19976)
+22:41:43 INFO  src.odds_client      Fetched 0 events for tennis_atp_french_open (API requests remaining: 19976)
+22:41:44 INFO  src.odds_client      Fetched 0 events for tennis_wta_french_open (API requests remaining: 19976)
+22:41:44 INFO  src.scanner          Step 2: 120 odds events across 11 sports
+22:41:44 INFO  src.matcher          Matched 278 Polymarket markets to external odds
+22:41:44 INFO  src.scanner          Step 3: 278 matched market pairs
+22:41:44 INFO  src.scanner          Step 4: 195 actionable opportunities (min edge 0.0%)
+22:41:44 INFO  src.scanner            #1: lal-osa-mal-2026-03-06-spread-away-2pt5 [RCD Mallorca] | poly=0.015 fair=0.188 edge=+1193.1% | size=$219
+22:41:44 INFO  src.scanner            #2: bun-lei-aug-2026-03-07-spread-away-2pt5 [FC Augsburg] | poly=0.013 fair=0.146 edge=+1069.2% | size=$169
+22:41:44 INFO  src.scanner            #3: lal-sev-ray-2026-03-08-spread-home-2pt5 [Sevilla FC] | poly=0.035 fair=0.378 edge=+965.5% | size=$444
+22:41:44 INFO  src.scanner            #4: lal-get-bet-2026-03-07-spread-away-2pt5 [Real Betis Balompié] | poly=0.034 fair=0.337 edge=+891.5% | size=$392
+22:41:44 INFO  src.scanner            #5: bun-pau-ein-2026-03-08-spread-away-2pt5 [Eintracht Frankfurt] | poly=0.038 fair=0.371 edge=+862.5% | size=$432
+22:41:44 INFO  src.scanner            #6: lal-get-bet-2026-03-07-spread-home-2pt5 [Getafe CF] | poly=0.036 fair=0.326 edge=+804.9% | size=$376
+22:41:44 INFO  src.scanner            #7: lal-vil-elc-2026-03-08-spread-away-2pt5 [Elche CF] | poly=0.018 fair=0.150 edge=+757.2% | size=$169
+22:41:44 INFO  src.scanner            #8: lal-esp-ovi-2026-03-09-spread-away-2pt5 [Real Oviedo] | poly=0.025 fair=0.214 edge=+755.1% | size=$242
+22:41:44 INFO  src.scanner            #9: bun-uni-wer-2026-03-08-spread-away-2pt5 [SV Werder Bremen] | poly=0.034 fair=0.283 edge=+746.1% | size=$323
+22:41:44 INFO  src.scanner            #10: lal-sev-ray-2026-03-08-spread-away-2pt5 [Rayo Vallecano de Madrid] | poly=0.038 fair=0.312 edge=+711.3% | size=$356
+22:41:51 INFO  root                 *** DRY RUN MODE - no real orders will be placed ***
+22:41:51 INFO  src.scanner          ============================================================
+22:41:51 INFO  src.scanner          Scan cycle at 2026-03-05 21:41:51 UTC
+22:41:53 INFO  src.polymarket_client Found 3915 active sports markets
+22:41:53 INFO  src.scanner          Step 1: 3915 Polymarket sports markets
+22:41:53 INFO  src.odds_client      Fetched 19 events for soccer_epl (API requests remaining: 19975)
+22:41:53 INFO  src.odds_client      Fetched 18 events for soccer_germany_bundesliga (API requests remaining: 19974)
+22:41:54 INFO  src.odds_client      Fetched 20 events for soccer_italy_serie_a (API requests remaining: 19973)
+22:41:54 INFO  src.odds_client      Fetched 17 events for soccer_france_ligue_one (API requests remaining: 19972)
+22:41:54 INFO  src.odds_client      Fetched 21 events for soccer_spain_la_liga (API requests remaining: 19971)
+22:41:54 INFO  src.odds_client      Fetched 8 events for soccer_uefa_champs_league (API requests remaining: 19970)
+22:41:54 INFO  src.odds_client      Fetched 8 events for soccer_uefa_europa_league (API requests remaining: 19969)
+22:41:54 INFO  src.odds_client      Fetched 9 events for basketball_nba (API requests remaining: 19968)
+22:41:55 INFO  src.odds_client      Fetched 0 events for americanfootball_nfl (API requests remaining: 19968)
+22:41:55 INFO  src.odds_client      Fetched 0 events for tennis_atp_french_open (API requests remaining: 19968)
+22:41:55 INFO  src.odds_client      Fetched 0 events for tennis_wta_french_open (API requests remaining: 19968)
+22:41:55 INFO  src.scanner          Step 2: 120 odds events across 11 sports
+22:41:55 INFO  src.matcher          Matched 278 Polymarket markets to external odds
+22:41:55 INFO  src.scanner          Step 3: 278 matched market pairs
+22:41:55 INFO  src.scanner          Step 4: 162 actionable opportunities (min edge 3.0%)
+22:41:55 INFO  src.scanner            #1: lal-osa-mal-2026-03-06-spread-away-2pt5 [RCD Mallorca] | poly=0.015 fair=0.188 edge=+1193.1% | size=$219
+22:41:55 INFO  src.scanner            #2: bun-lei-aug-2026-03-07-spread-away-2pt5 [FC Augsburg] | poly=0.013 fair=0.146 edge=+1069.2% | size=$169
+22:41:55 INFO  src.scanner            #3: lal-sev-ray-2026-03-08-spread-home-2pt5 [Sevilla FC] | poly=0.035 fair=0.378 edge=+965.5% | size=$444
+22:41:55 INFO  src.scanner            #4: lal-get-bet-2026-03-07-spread-away-2pt5 [Real Betis Balompié] | poly=0.034 fair=0.337 edge=+891.5% | size=$392
+22:41:55 INFO  src.scanner            #5: bun-pau-ein-2026-03-08-spread-away-2pt5 [Eintracht Frankfurt] | poly=0.038 fair=0.371 edge=+862.5% | size=$432
+22:41:55 INFO  src.scanner            #6: lal-get-bet-2026-03-07-spread-home-2pt5 [Getafe CF] | poly=0.036 fair=0.326 edge=+804.9% | size=$376
+22:41:55 INFO  src.scanner            #7: lal-vil-elc-2026-03-08-spread-away-2pt5 [Elche CF] | poly=0.018 fair=0.150 edge=+757.2% | size=$169
+22:41:55 INFO  src.scanner            #8: lal-esp-ovi-2026-03-09-spread-away-2pt5 [Real Oviedo] | poly=0.025 fair=0.214 edge=+755.1% | size=$242
+22:41:55 INFO  src.scanner            #9: bun-uni-wer-2026-03-08-spread-away-2pt5 [SV Werder Bremen] | poly=0.034 fair=0.283 edge=+746.1% | size=$323
+22:41:55 INFO  src.scanner            #10: lal-sev-ray-2026-03-08-spread-away-2pt5 [Rayo Vallecano de Madrid] | poly=0.038 fair=0.312 edge=+711.3% | size=$356
+22:42:17 INFO  root                 *** DRY RUN MODE - no real orders will be placed ***
+22:42:17 INFO  src.scanner          ============================================================
+22:42:17 INFO  src.scanner          Scan cycle at 2026-03-05 21:42:17 UTC
+22:42:19 INFO  src.polymarket_client Found 3915 active sports markets
+22:42:19 INFO  src.scanner          Step 1: 3915 Polymarket sports markets
+22:42:19 INFO  src.odds_client      Fetched 19 events for soccer_epl (API requests remaining: 19967)
+22:42:19 INFO  src.odds_client      Fetched 18 events for soccer_germany_bundesliga (API requests remaining: 19966)
+22:42:19 INFO  src.odds_client      Fetched 20 events for soccer_italy_serie_a (API requests remaining: 19965)
+22:42:20 INFO  src.odds_client      Fetched 17 events for soccer_france_ligue_one (API requests remaining: 19964)
+22:42:20 INFO  src.odds_client      Fetched 21 events for soccer_spain_la_liga (API requests remaining: 19963)
+22:42:20 INFO  src.odds_client      Fetched 8 events for soccer_uefa_champs_league (API requests remaining: 19962)
+22:42:20 INFO  src.odds_client      Fetched 8 events for soccer_uefa_europa_league (API requests remaining: 19961)
+22:42:20 INFO  src.odds_client      Fetched 9 events for basketball_nba (API requests remaining: 19960)
+22:42:20 INFO  src.odds_client      Fetched 0 events for americanfootball_nfl (API requests remaining: 19960)
+22:42:21 INFO  src.odds_client      Fetched 0 events for tennis_atp_french_open (API requests remaining: 19960)
+22:42:21 INFO  src.odds_client      Fetched 0 events for tennis_wta_french_open (API requests remaining: 19960)
+22:42:21 INFO  src.scanner          Step 2: 120 odds events across 11 sports
+22:42:21 INFO  src.matcher          Matched 82 Polymarket markets to external odds
+22:42:21 INFO  src.scanner          Step 3: 82 matched market pairs
+22:42:21 INFO  src.scanner          Step 4: 66 actionable opportunities (min edge 0.0%)
+22:42:21 INFO  src.scanner            #1: nba-dal-bos-2026-03-06 [Mavericks] | poly=0.125 fair=0.264 edge=+111.2% | size=$199
+22:42:21 INFO  src.scanner            #2: epl-bur-bou-2026-03-14-bur [Yes] | poly=0.245 fair=0.510 edge=+108.2% | size=$439
+22:42:21 INFO  src.scanner            #3: epl-tot-cry-2026-03-05-cry [No] | poly=0.019 fair=0.031 edge=+64.5% | size=$16
+22:42:21 INFO  src.scanner            #4: lal-val-ala-2026-03-08-val [No] | poly=0.535 fair=0.812 edge=+51.9% | size=$500
+22:42:21 INFO  src.scanner            #5: lal-mad-get-2026-03-14-get [Yes] | poly=0.080 fair=0.105 edge=+31.8% | size=$35
+22:42:21 INFO  src.scanner            #6: nba-nyk-den-2026-03-06 [Nuggets] | poly=0.475 fair=0.620 edge=+30.5% | size=$345
+22:42:21 INFO  src.scanner            #7: lal-bar-sev-2026-03-15-sev [Yes] | poly=0.075 fair=0.088 edge=+17.8% | size=$18
+22:42:21 INFO  src.scanner            #8: epl-ars-eve-2026-03-14-eve [Yes] | poly=0.075 fair=0.085 edge=+13.5% | size=$14
+22:42:21 INFO  src.scanner            #9: ucl-lev-ars-2026-03-11-lev [Yes] | poly=0.145 fair=0.158 edge=+8.8% | size=$19
+22:42:21 INFO  src.scanner            #10: nba-gsw-hou-2026-03-05-1h-moneyline [Rockets] | poly=0.700 fair=0.759 edge=+8.5% | size=$247

@@ -51,15 +51,21 @@ class PolymarketClient:
     # ── Market Discovery (Gamma API) ────────────────────────────────
 
     def get_active_sports_markets(self, limit: int = 100) -> list[dict]:
-        """Fetch active sports markets from Gamma API."""
+        """Fetch active sports markets from Gamma API using sport tag IDs."""
+        # First fetch sport tag mappings
+        tag_map = self._get_sport_tags()
         markets = []
         for sport in self.config.target_sports:
+            tag_id = tag_map.get(sport)
+            if not tag_id:
+                log.debug("No tag mapping for sport: %s", sport)
+                continue
             url = f"{self.config.gamma_url}/events"
             params = {
                 "active": "true",
                 "closed": "false",
                 "limit": limit,
-                "order": "volume_24hr",
+                "tag_id": tag_id,
             }
             try:
                 resp = self._session.get(url, params=params, timeout=10)
@@ -67,13 +73,38 @@ class PolymarketClient:
                 events = resp.json()
                 for event in events:
                     slug = event.get("slug", "")
-                    if slug.startswith(sport + "-"):
-                        for m in event.get("markets", [event]):
-                            markets.append(self._parse_market(m, sport))
+                    # Only match-level events (contain date pattern)
+                    if not slug.startswith(sport + "-"):
+                        continue
+                    for m in event.get("markets", [event]):
+                        markets.append(self._parse_market(m, sport))
             except Exception as e:
                 log.warning("Failed to fetch %s markets: %s", sport, e)
         log.info("Found %d active sports markets", len(markets))
         return markets
+
+    def _get_sport_tags(self) -> dict[str, str]:
+        """Fetch sport-to-tag_id mapping from /sports endpoint."""
+        try:
+            resp = self._session.get(f"{self.config.gamma_url}/sports", timeout=10)
+            resp.raise_for_status()
+            sports = resp.json()
+            # Each sport has a 'tags' field like "1,82,306,100639"
+            # Use the second tag as the sport-specific one (first is generic "Sports")
+            tag_map = {}
+            for s in sports:
+                sport_key = s.get("sport", "")
+                tags = s.get("tags", "").split(",")
+                # Use the most specific tag (second one, or first non-"1" tag)
+                for t in tags:
+                    t = t.strip()
+                    if t and t != "1":
+                        tag_map[sport_key] = t
+                        break
+            return tag_map
+        except Exception as e:
+            log.warning("Failed to fetch sport tags: %s", e)
+            return {}
 
     def get_market_by_condition(self, condition_id: str) -> Optional[dict]:
         """Fetch a single market by condition ID."""
