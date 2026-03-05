@@ -1,0 +1,22 @@
+[Unit]
+Description=Polymarket Arbitrage Bot (Paper Trading)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=polybot
+WorkingDirectory=/home/polybot/polymarket-rn1
+ExecStart=/home/polybot/polymarket-rn1/venv/bin/python run_bot.py --loop
+Restart=always
+RestartSec=30
+Environment=PYTHONIOENCODING=utf-8
+StandardOutput=journal
+StandardError=journal
+
+# Safety: don't restart more than 5 times in 5 minutes
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target

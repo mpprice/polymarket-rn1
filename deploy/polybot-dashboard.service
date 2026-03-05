@@ -1,0 +1,18 @@
+[Unit]
+Description=Polymarket Bot Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=polybot
+WorkingDirectory=/home/polybot/polymarket-rn1
+ExecStart=/home/polybot/polymarket-rn1/venv/bin/python dashboard.py --port 8050
+Restart=always
+RestartSec=10
+Environment=PYTHONIOENCODING=utf-8
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
