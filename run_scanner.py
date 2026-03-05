@@ -72,8 +72,11 @@ def main():
             print(f"OPPORTUNITIES FOUND: {len(opportunities)}")
             print(f"{'='*80}")
             for i, opp in enumerate(opportunities):
+                mtype = opp.get('market_type', 'h2h')
+                line = opp.get('line')
+                line_str = f" ({line})" if line else ""
                 print(f"\n#{i+1}: {opp['question']}")
-                print(f"   Outcome: {opp['outcome']}")
+                print(f"   Type: {mtype}{line_str}  |  Outcome: {opp['outcome']}")
                 print(f"   Polymarket price: {opp['poly_price']:.3f}")
                 print(f"   Fair probability:  {opp['fair_prob']:.3f} ({opp['bookmaker']})")
                 print(f"   Edge: +{opp['edge_pct']:.1f}%")

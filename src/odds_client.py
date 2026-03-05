@@ -1,4 +1,7 @@
-"""Fetch sharp odds from The Odds API and convert to implied probabilities."""
+"""Fetch sharp odds from The Odds API and convert to implied probabilities.
+
+V2: Supports h2h, spreads, and totals markets in a single API call.
+"""
 import logging
 from typing import Optional
 
@@ -9,7 +12,9 @@ from .config import Config
 log = logging.getLogger(__name__)
 
 # Mapping from Polymarket sport slugs to The Odds API sport keys
+# Extended based on RN1 activity analysis (all sports RN1 trades)
 SPORT_KEY_MAP = {
+    # Football (soccer) — top tier
     "epl": "soccer_epl",
     "bun": "soccer_germany_bundesliga",
     "sea": "soccer_italy_serie_a",
@@ -17,11 +22,31 @@ SPORT_KEY_MAP = {
     "lal": "soccer_spain_la_liga",
     "ucl": "soccer_uefa_champs_league",
     "uel": "soccer_uefa_europa_league",
+    # Football — second tier
+    "elc": "soccer_efl_champ",
+    "itsb": "soccer_italy_serie_b",
+    "bl2": "soccer_germany_bundesliga2",
+    "por": "soccer_portugal_primeira_liga",
+    "es2": "soccer_spain_segunda_division",
+    "ere": "soccer_netherlands_eredivisie",
+    "scop": "soccer_scotland_premiership",
+    "mex": "soccer_mexico_ligamx",
+    "arg": "soccer_argentina_primera_division",
+    "bra": "soccer_brazil_campeonato",
+    "mls": "soccer_usa_mls",
+    "tur": "soccer_turkey_super_league",
+    "col": "soccer_colombia_primera_a",
+    "spl": "soccer_spain_primera_division",  # alias
+    # US sports
     "nba": "basketball_nba",
+    "cbb": "basketball_ncaab",
     "nfl": "americanfootball_nfl",
-    "atp": "tennis_atp_french_open",  # varies by tournament
-    "wta": "tennis_wta_french_open",
-    # CS2/esports not covered by The Odds API - needs separate source
+    "nhl": "icehockey_nhl",
+    # Tennis — The Odds API uses tournament-specific keys
+    "atp": "tennis_atp_aus_open",  # rotates by active tournament
+    "wta": "tennis_wta_aus_open",
+    # Esports — not covered by The Odds API
+    # "cs2", "lol", "dota2", "val", "codmw" — would need separate data source
 }
 
 # Sharp bookmakers to use as fair odds reference (in priority order)
@@ -38,17 +63,17 @@ class OddsClient:
         self._session = requests.Session()
         self._remaining_requests = None
 
-    def get_odds(self, sport_key: str, markets: str = "h2h") -> list[dict]:
+    def get_odds(self, sport_key: str, markets: str = "h2h,spreads,totals") -> list[dict]:
         """Fetch odds for a sport. Returns normalized events with implied probs.
 
         Args:
             sport_key: The Odds API sport key (e.g. 'soccer_epl')
-            markets: Odds market type ('h2h', 'spreads', 'totals')
+            markets: Comma-separated market types ('h2h', 'spreads', 'totals')
         """
         url = f"{self.BASE_URL}/sports/{sport_key}/odds"
         params = {
             "apiKey": self.api_key,
-            "regions": "eu",  # European decimal odds
+            "regions": "eu",
             "markets": markets,
             "oddsFormat": "decimal",
             "bookmakers": ",".join(SHARP_BOOKS),
@@ -60,7 +85,7 @@ class OddsClient:
 
         events = []
         for event in raw:
-            parsed = self._parse_event(event, markets)
+            parsed = self._parse_event_multi(event)
             if parsed:
                 events.append(parsed)
 
@@ -83,8 +108,8 @@ class OddsClient:
                 log.warning("Failed to fetch odds for %s (%s): %s", pm_sport, odds_key, e)
         return all_odds
 
-    def _parse_event(self, event: dict, market_type: str) -> Optional[dict]:
-        """Extract sharp implied probabilities from an event."""
+    def _parse_event_multi(self, event: dict) -> Optional[dict]:
+        """Parse an event with h2h, spreads, and totals from the sharpest book."""
         home = event.get("home_team", "")
         away = event.get("away_team", "")
         commence = event.get("commence_time", "")
@@ -101,45 +126,104 @@ class OddsClient:
                 break
 
         if not sharp_book:
-            # Fall back to first available
             if bookmakers:
                 sharp_book = bookmakers[0]
             else:
                 return None
 
-        # Extract odds from the target market
+        result = {
+            "home_team": home,
+            "away_team": away,
+            "commence_time": commence,
+            "sport_key": event.get("sport_key", ""),
+            "bookmaker": sharp_book["key"],
+        }
+
         for market in sharp_book.get("markets", []):
-            if market["key"] != market_type:
-                continue
+            key = market["key"]
+            if key == "h2h":
+                result["outcomes"], result["overround"] = self._parse_h2h(market)
+                result["market_type"] = "h2h"
+            elif key == "spreads":
+                result["spread_outcomes"] = self._parse_spreads(market)
+            elif key == "totals":
+                result["total_outcomes"] = self._parse_totals(market)
 
-            outcomes = {}
-            total_implied = 0.0
-            for outcome in market.get("outcomes", []):
-                name = outcome["name"]
-                decimal_odds = outcome["price"]
-                implied_prob = 1.0 / decimal_odds if decimal_odds > 0 else 0
-                total_implied += implied_prob
-                outcomes[name] = {
-                    "decimal_odds": decimal_odds,
-                    "implied_prob_raw": implied_prob,
-                }
+        # Must have at least h2h to be useful
+        if "outcomes" not in result:
+            return None
 
-            # Remove overround (normalize to true probabilities)
-            if total_implied > 0:
-                for name in outcomes:
-                    outcomes[name]["fair_prob"] = outcomes[name]["implied_prob_raw"] / total_implied
+        return result
 
-            return {
-                "home_team": home,
-                "away_team": away,
-                "commence_time": commence,
-                "sport_key": event.get("sport_key", ""),
-                "bookmaker": sharp_book["key"],
-                "market_type": market_type,
-                "outcomes": outcomes,
-                "overround": total_implied - 1.0,
+    def _parse_h2h(self, market: dict) -> tuple[dict, float]:
+        """Parse h2h market into fair probabilities."""
+        outcomes = {}
+        total_implied = 0.0
+        for outcome in market.get("outcomes", []):
+            name = outcome["name"]
+            decimal_odds = outcome["price"]
+            implied_prob = 1.0 / decimal_odds if decimal_odds > 0 else 0
+            total_implied += implied_prob
+            outcomes[name] = {
+                "decimal_odds": decimal_odds,
+                "implied_prob_raw": implied_prob,
             }
-        return None
+
+        # Remove overround
+        if total_implied > 0:
+            for name in outcomes:
+                outcomes[name]["fair_prob"] = outcomes[name]["implied_prob_raw"] / total_implied
+
+        return outcomes, total_implied - 1.0
+
+    def _parse_spreads(self, market: dict) -> dict:
+        """Parse spreads market into fair probabilities with point values."""
+        outcomes = {}
+        total_implied = 0.0
+        raw = []
+        for outcome in market.get("outcomes", []):
+            name = outcome["name"]
+            decimal_odds = outcome["price"]
+            point = outcome.get("point", 0)
+            implied_prob = 1.0 / decimal_odds if decimal_odds > 0 else 0
+            total_implied += implied_prob
+            raw.append((name, decimal_odds, implied_prob, point))
+
+        # Remove overround
+        for name, decimal_odds, implied_prob, point in raw:
+            fair_prob = implied_prob / total_implied if total_implied > 0 else 0
+            outcomes[name] = {
+                "decimal_odds": decimal_odds,
+                "implied_prob_raw": implied_prob,
+                "fair_prob": fair_prob,
+                "point": point,
+            }
+
+        return outcomes
+
+    def _parse_totals(self, market: dict) -> dict:
+        """Parse totals market into fair probabilities with point values."""
+        outcomes = {}
+        total_implied = 0.0
+        raw = []
+        for outcome in market.get("outcomes", []):
+            name = outcome["name"]
+            decimal_odds = outcome["price"]
+            point = outcome.get("point", 0)
+            implied_prob = 1.0 / decimal_odds if decimal_odds > 0 else 0
+            total_implied += implied_prob
+            raw.append((name, decimal_odds, implied_prob, point))
+
+        for name, decimal_odds, implied_prob, point in raw:
+            fair_prob = implied_prob / total_implied if total_implied > 0 else 0
+            outcomes[name] = {
+                "decimal_odds": decimal_odds,
+                "implied_prob_raw": implied_prob,
+                "fair_prob": fair_prob,
+                "point": point,
+            }
+
+        return outcomes
 
     @property
     def requests_remaining(self) -> Optional[str]:

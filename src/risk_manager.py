@@ -1,6 +1,9 @@
-"""Position sizing and risk management."""
+"""Position sizing and risk management.
+
+Calibrated for a $500 test bankroll with conservative Kelly sizing.
+"""
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from .config import Config
 
@@ -31,26 +34,30 @@ class RiskManager:
     def check_can_trade(self, usdc_amount: float) -> bool:
         """Check if a new trade is within risk limits."""
         if self.total_exposure + usdc_amount > self.config.max_total_exposure_usdc:
-            log.warning("Trade rejected: would exceed max exposure ($%.0f + $%.0f > $%.0f)",
-                        self.total_exposure, usdc_amount, self.config.max_total_exposure_usdc)
+            log.debug("Trade rejected: would exceed max exposure ($%.0f + $%.0f > $%.0f)",
+                      self.total_exposure, usdc_amount, self.config.max_total_exposure_usdc)
             return False
         if usdc_amount > self.config.max_position_usdc:
-            log.warning("Trade rejected: position size $%.0f > max $%.0f",
-                        usdc_amount, self.config.max_position_usdc)
+            log.debug("Trade rejected: position size $%.0f > max $%.0f",
+                      usdc_amount, self.config.max_position_usdc)
             return False
         return True
 
-    def calculate_position_size(self, edge_pct: float, price: float, kelly_fraction: float = 0.25) -> float:
+    def calculate_position_size(self, edge_pct: float, price: float,
+                                kelly_fraction: float = None) -> float:
         """Calculate position size using fractional Kelly criterion.
 
         Args:
             edge_pct: Expected edge as percentage (e.g. 5.0 = 5%)
             price: Entry price (probability)
-            kelly_fraction: Fraction of full Kelly to use (default 0.25 = quarter Kelly)
+            kelly_fraction: Fraction of full Kelly to use (default from config)
 
         Returns:
             USDC amount to risk
         """
+        if kelly_fraction is None:
+            kelly_fraction = self.config.kelly_fraction
+
         if edge_pct <= 0 or price <= 0 or price >= 1:
             return 0.0
 
@@ -69,14 +76,17 @@ class RiskManager:
 
         kelly_size = kelly_full * kelly_fraction
 
-        # Cap at max position size
+        # Size relative to current bankroll (not initial)
+        effective_bankroll = self.config.bankroll_usdc + self.realized_pnl
+        effective_bankroll = max(effective_bankroll, 50)  # Floor at $50
+
         usdc_size = min(
-            kelly_size * self.config.max_total_exposure_usdc,
+            kelly_size * effective_bankroll,
             self.config.max_position_usdc,
         )
 
-        # Floor at $5 minimum to be worth the gas
-        if usdc_size < 5.0:
+        # Floor at $2 minimum to be worth the gas
+        if usdc_size < 2.0:
             return 0.0
 
         return round(usdc_size, 2)
@@ -95,8 +105,8 @@ class RiskManager:
         )
         self.total_exposure += usdc
         self.trade_count += 1
-        log.info("Recorded: %s %s %.0f shares @ %.4f ($%.2f) on %s [%s]",
-                 side, outcome, size, price, usdc, slug, token_id[:16])
+        log.info("Recorded: %s %s %.0f shares @ %.4f ($%.2f) on %s",
+                 side, outcome, size, price, usdc, slug)
 
     def record_resolution(self, token_id: str, payout: float):
         """Record a position resolution."""
@@ -116,4 +126,5 @@ class RiskManager:
             "realized_pnl": self.realized_pnl,
             "trade_count": self.trade_count,
             "headroom": self.config.max_total_exposure_usdc - self.total_exposure,
+            "bankroll": self.config.bankroll_usdc + self.realized_pnl,
         }

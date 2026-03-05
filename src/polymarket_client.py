@@ -172,7 +172,12 @@ class PolymarketClient:
         side: str = "BUY",
         neg_risk: bool = False,
     ) -> dict:
-        """Place a GTC limit order. Returns order response."""
+        """Place a GTC limit order (MAKER - no 3-second delay on sports).
+
+        IMPORTANT: Sports markets have a 3-second delay on TAKER orders
+        (anti-courtsiding). Limit orders that rest on the book are MAKER
+        and execute without delay. Always use limit orders, not market orders.
+        """
         if self.dry_run:
             log.info("[DRY RUN] Limit %s %.1f @ %.4f token=%s...", side, size, price, token_id[:20])
             return {"orderID": "dry-run", "status": "simulated"}
@@ -221,6 +226,22 @@ class PolymarketClient:
         return self._clob.get_open_orders()
 
     # ── Positions ───────────────────────────────────────────────────
+
+    def merge_positions(self, condition_id: str, amount: int) -> dict:
+        """Merge YES+NO token pairs back into USDC.
+
+        Each YES+NO pair = $1.00 USDC. This is how RN1 realized profits
+        without selling directly (synthetic sell via merge).
+        """
+        if self.dry_run:
+            log.info("[DRY RUN] Merge %d pairs condition=%s...", amount, condition_id[:20])
+            return {"status": "simulated", "amount": amount}
+
+        return self._clob.merge(condition_id, amount)
+
+    def get_tick_size_for_token(self, token_id: str) -> str:
+        """Get tick size for a token."""
+        return str(self._clob.get_tick_size(token_id))
 
     def get_positions(self, address: str) -> list[dict]:
         """Get current positions from data API."""

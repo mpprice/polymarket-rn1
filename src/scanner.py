@@ -61,6 +61,8 @@ class Scanner:
                             "suggested_size_usdc": size,
                             "bookmaker": m["odds_event"]["bookmaker"],
                             "neg_risk": m["polymarket"]["neg_risk"],
+                            "market_type": edge.get("market_type", "h2h"),
+                            "line": edge.get("line"),
                         }
                         opportunities.append(opp)
 
@@ -70,8 +72,9 @@ class Scanner:
         log.info("Step 4: %d actionable opportunities (min edge %.1f%%)",
                  len(opportunities), self.config.min_edge_pct)
         for i, opp in enumerate(opportunities[:10]):
-            log.info("  #%d: %s [%s] | poly=%.3f fair=%.3f edge=+%.1f%% | size=$%.0f",
-                     i + 1, opp["slug"], opp["outcome"],
+            mtype = opp.get("market_type", "h2h")
+            log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%% | size=$%.0f",
+                     i + 1, opp["slug"], opp["outcome"], mtype,
                      opp["poly_price"], opp["fair_prob"], opp["edge_pct"],
                      opp["suggested_size_usdc"])
 
