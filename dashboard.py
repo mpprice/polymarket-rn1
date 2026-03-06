@@ -110,11 +110,35 @@ def _get_resolved() -> list[dict]:
 
 
 def _polymarket_url(slug: str) -> str:
-    """Build a Polymarket event URL from a slug."""
+    """Build a Polymarket event URL from a market slug.
+
+    Sports market slugs look like: epl-tot-cry-2026-03-05-spread-home-1pt5
+    The event slug is the base match part: epl-tot-cry-2026-03-05
+    For spread/total/exotic markets, Polymarket groups them under a
+    '{base}-more-markets' event page.
+    """
     if not slug:
         return "#"
-    # Extract event slug (remove outcome-specific suffixes for the event page)
-    # Polymarket URLs: https://polymarket.com/event/{slug}
+    import re
+    # Sports slugs have a date pattern: {sport}-{team1}-{team2}-YYYY-MM-DD-{suffix}
+    # Extract base: everything up to and including the date
+    m = re.match(r'^([a-z0-9]+-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2})', slug)
+    if m:
+        base = m.group(1)
+        remainder = slug[len(base):]
+        # If there's a suffix beyond the date (spread, total, etc.), use -more-markets event
+        if remainder and remainder not in ('-draw',):
+            # Check if it's a specific outcome (team abbrev like -tot, -cry)
+            # Outcome suffixes are short (3-4 chars), spread/total are longer
+            suffix_part = remainder.lstrip('-')
+            if any(suffix_part.startswith(x) for x in ['spread', 'total', 'ou-', 'over', 'under',
+                                                         'exact', 'btts', '1h', '2h', 'corners']):
+                return f"https://polymarket.com/event/{base}-more-markets"
+            else:
+                # It's a team outcome slug like -tot or -draw — use base event
+                return f"https://polymarket.com/event/{base}"
+        return f"https://polymarket.com/event/{base}"
+    # Non-sports slug — use as-is
     return f"https://polymarket.com/event/{slug}"
 
 
