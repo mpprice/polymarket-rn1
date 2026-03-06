@@ -1,0 +1,791 @@
+{
+  "timestamp": "2026-03-06T00:11:28.800841+00:00",
+  "events": [
+    {
+      "event_id": "9433b263c495c0f5968b95317cc639f6",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Orlando Magic",
+      "away_team": "Dallas Mavericks",
+      "commence_time": "2026-03-06T00:10:00Z",
+      "hours_to_start": -0.02466690027777778,
+      "bookmaker": "pinnacle",
+      "overround": 0.028610768015874477,
+      "outcomes": {
+        "Dallas Mavericks": {
+          "decimal_odds": 3.77,
+          "implied_prob": 0.26525198938992045,
+          "fair_prob": 0.25787401574803154
+        },
+        "Orlando Magic": {
+          "decimal_odds": 1.31,
+          "implied_prob": 0.7633587786259541,
+          "fair_prob": 0.7421259842519685
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "bc0cdadc5e95e588b0a1ea210243fa52",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Washington Wizards",
+      "away_team": "Utah Jazz",
+      "commence_time": "2026-03-06T00:10:33Z",
+      "hours_to_start": -0.01550023361111111,
+      "bookmaker": "pinnacle",
+      "overround": 0.025976312017501835,
+      "outcomes": {
+        "Utah Jazz": {
+          "decimal_odds": 2.47,
+          "implied_prob": 0.4048582995951417,
+          "fair_prob": 0.39460784313725494
+        },
+        "Washington Wizards": {
+          "decimal_odds": 1.61,
+          "implied_prob": 0.6211180124223602,
+          "fair_prob": 0.6053921568627452
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "9096d55ba6f3120da3126b404e48d023",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Miami Heat",
+      "away_team": "Brooklyn Nets",
+      "commence_time": "2026-03-06T00:40:00Z",
+      "hours_to_start": 0.4753330997222222,
+      "bookmaker": "pinnacle",
+      "overround": 0.035170865552506925,
+      "outcomes": {
+        "Brooklyn Nets": {
+          "decimal_odds": 6.33,
+          "implied_prob": 0.1579778830963665,
+          "fair_prob": 0.15261044176706826
+        },
+        "Miami Heat": {
+          "decimal_odds": 1.14,
+          "implied_prob": 0.8771929824561404,
+          "fair_prob": 0.8473895582329317
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "f7585c5c396d85403879fd5cd3097302",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Houston Rockets",
+      "away_team": "Golden State Warriors",
+      "commence_time": "2026-03-06T00:40:00Z",
+      "hours_to_start": 0.4753330997222222,
+      "bookmaker": "pinnacle",
+      "overround": 0.030165259435664282,
+      "outcomes": {
+        "Golden State Warriors": {
+          "decimal_odds": 4.47,
+          "implied_prob": 0.2237136465324385,
+          "fair_prob": 0.21716287215411562
+        },
+        "Houston Rockets": {
+          "decimal_odds": 1.24,
+          "implied_prob": 0.8064516129032259,
+          "fair_prob": 0.7828371278458844
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "405300ced4b3e611f8d6cc145e5cc9da",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "San Antonio Spurs",
+      "away_team": "Detroit Pistons",
+      "commence_time": "2026-03-06T01:10:00Z",
+      "hours_to_start": 0.9753330997222222,
+      "bookmaker": "pinnacle",
+      "overround": 0.026831785345717396,
+      "outcomes": {
+        "Detroit Pistons": {
+          "decimal_odds": 2.28,
+          "implied_prob": 0.4385964912280702,
+          "fair_prob": 0.42713567839195976
+        },
+        "San Antonio Spurs": {
+          "decimal_odds": 1.7,
+          "implied_prob": 0.5882352941176471,
+          "fair_prob": 0.5728643216080401
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "0aac7c0b9b7350238d921ab4c6faf26d",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Minnesota Timberwolves",
+      "away_team": "Toronto Raptors",
+      "commence_time": "2026-03-06T01:10:00Z",
+      "hours_to_start": 0.9753330997222222,
+      "bookmaker": "pinnacle",
+      "overround": 0.02655286865813178,
+      "outcomes": {
+        "Minnesota Timberwolves": {
+          "decimal_odds": 1.48,
+          "implied_prob": 0.6756756756756757,
+          "fair_prob": 0.6581986143187067
+        },
+        "Toronto Raptors": {
+          "decimal_odds": 2.85,
+          "implied_prob": 0.3508771929824561,
+          "fair_prob": 0.3418013856812933
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "2838ee4e0a7f60e2fb0fb134a84c3a76",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Phoenix Suns",
+      "away_team": "Chicago Bulls",
+      "commence_time": "2026-03-06T02:10:00Z",
+      "hours_to_start": 1.9753330997222223,
+      "bookmaker": "pinnacle",
+      "overround": 0.031175829110269948,
+      "outcomes": {
+        "Chicago Bulls": {
+          "decimal_odds": 5.24,
+          "implied_prob": 0.19083969465648853,
+          "fair_prob": 0.18506998444790046
+        },
+        "Phoenix Suns": {
+          "decimal_odds": 1.19,
+          "implied_prob": 0.8403361344537815,
+          "fair_prob": 0.8149300155520997
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "2bcbbf1e576480f97be0401eb089cd5a",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Denver Nuggets",
+      "away_team": "Los Angeles Lakers",
+      "commence_time": "2026-03-06T03:10:00Z",
+      "hours_to_start": 2.975333099722222,
+      "bookmaker": "pinnacle",
+      "overround": 0.027567675159235527,
+      "outcomes": {
+        "Denver Nuggets": {
+          "decimal_odds": 1.57,
+          "implied_prob": 0.6369426751592356,
+          "fair_prob": 0.6198547215496368
+        },
+        "Los Angeles Lakers": {
+          "decimal_odds": 2.56,
+          "implied_prob": 0.390625,
+          "fair_prob": 0.3801452784503632
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "3a3ada953e9680525dd22a739ea65ffd",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Sacramento Kings",
+      "away_team": "New Orleans Pelicans",
+      "commence_time": "2026-03-06T03:10:00Z",
+      "hours_to_start": 2.975333099722222,
+      "bookmaker": "pinnacle",
+      "overround": 0.026292870089211995,
+      "outcomes": {
+        "New Orleans Pelicans": {
+          "decimal_odds": 1.47,
+          "implied_prob": 0.6802721088435374,
+          "fair_prob": 0.6628440366972478
+        },
+        "Sacramento Kings": {
+          "decimal_odds": 2.89,
+          "implied_prob": 0.3460207612456747,
+          "fair_prob": 0.3371559633027523
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "ab266816a618acf42cd468f0c03d88df",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Boston Celtics",
+      "away_team": "Dallas Mavericks",
+      "commence_time": "2026-03-07T00:10:00Z",
+      "hours_to_start": 23.97533309972222,
+      "bookmaker": "betfair_ex_eu",
+      "overround": 0.8909999108018909,
+      "outcomes": {
+        "Boston Celtics": {
+          "decimal_odds": 1.11,
+          "implied_prob": 0.9009009009009008,
+          "fair_prob": 0.4764150943396226
+        },
+        "Dallas Mavericks": {
+          "decimal_odds": 1.01,
+          "implied_prob": 0.9900990099009901,
+          "fair_prob": 0.5235849056603774
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "30131455f152309d83d6dd4173318b47",
+      "sport_key": "basketball_nba",
+      "sport_name": "NBA",
+      "home_team": "Denver Nuggets",
+      "away_team": "New York Knicks",
+      "commence_time": "2026-03-07T02:10:00Z",
+      "hours_to_start": 25.97533309972222,
+      "bookmaker": "betfair_ex_eu",
+      "overround": 0.9801980198019802,
+      "outcomes": {
+        "Denver Nuggets": {
+          "decimal_odds": 1.01,
+          "implied_prob": 0.9900990099009901,
+          "fair_prob": 0.5
+        },
+        "New York Knicks": {
+          "decimal_odds": 1.01,
+          "implied_prob": 0.9900990099009901,
+          "fair_prob": 0.5
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "07e3e6c1966c98bce260a6608d692f73",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Burnley",
+      "away_team": "Bournemouth",
+      "commence_time": "2026-03-14T15:00:00Z",
+      "hours_to_start": 206.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.05204949194719011,
+      "outcomes": {
+        "Bournemouth": {
+          "decimal_odds": 1.85,
+          "implied_prob": 0.5405405405405405,
+          "fair_prob": 0.5137976346911958
+        },
+        "Burnley": {
+          "decimal_odds": 3.91,
+          "implied_prob": 0.2557544757033248,
+          "fair_prob": 0.24310118265440214
+        },
+        "Draw": {
+          "decimal_odds": 3.91,
+          "implied_prob": 0.2557544757033248,
+          "fair_prob": 0.24310118265440214
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "9c44263754509bd50f8db5429ca3d264",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Sunderland",
+      "away_team": "Brighton and Hove Albion",
+      "commence_time": "2026-03-14T15:00:00Z",
+      "hours_to_start": 206.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.049433482610192314,
+      "outcomes": {
+        "Brighton and Hove Albion": {
+          "decimal_odds": 2.19,
+          "implied_prob": 0.4566210045662101,
+          "fair_prob": 0.435111907646099
+        },
+        "Sunderland": {
+          "decimal_odds": 3.31,
+          "implied_prob": 0.3021148036253776,
+          "fair_prob": 0.2878837092885066
+        },
+        "Draw": {
+          "decimal_odds": 3.44,
+          "implied_prob": 0.29069767441860467,
+          "fair_prob": 0.27700438306539443
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "0962092236bc521dd9eb0ea41ef8b8c0",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Arsenal",
+      "away_team": "Everton",
+      "commence_time": "2026-03-14T17:30:00Z",
+      "hours_to_start": 209.30866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.055221526010842625,
+      "outcomes": {
+        "Arsenal": {
+          "decimal_odds": 1.29,
+          "implied_prob": 0.7751937984496123,
+          "fair_prob": 0.7346265967300283
+        },
+        "Everton": {
+          "decimal_odds": 10.99,
+          "implied_prob": 0.09099181073703366,
+          "fair_prob": 0.08623005548514436
+        },
+        "Draw": {
+          "decimal_odds": 5.29,
+          "implied_prob": 0.1890359168241966,
+          "fair_prob": 0.17914334778482732
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "2beaea2705eda4c075d7aa55a068d5ab",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Chelsea",
+      "away_team": "Newcastle United",
+      "commence_time": "2026-03-14T17:30:00Z",
+      "hours_to_start": 209.30866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.053423249856825894,
+      "outcomes": {
+        "Chelsea": {
+          "decimal_odds": 1.78,
+          "implied_prob": 0.5617977528089888,
+          "fair_prob": 0.5333067718842778
+        },
+        "Newcastle United": {
+          "decimal_odds": 3.86,
+          "implied_prob": 0.2590673575129534,
+          "fair_prob": 0.2459290295217654
+        },
+        "Draw": {
+          "decimal_odds": 4.3,
+          "implied_prob": 0.23255813953488372,
+          "fair_prob": 0.22076419859395682
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "da5bec9f0dc4903170736d22277ee47e",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "West Ham United",
+      "away_team": "Manchester City",
+      "commence_time": "2026-03-14T20:00:00Z",
+      "hours_to_start": 211.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.056139105663666644,
+      "outcomes": {
+        "Manchester City": {
+          "decimal_odds": 1.63,
+          "implied_prob": 0.6134969325153374,
+          "fair_prob": 0.5808864847683322
+        },
+        "West Ham United": {
+          "decimal_odds": 4.76,
+          "implied_prob": 0.21008403361344538,
+          "fair_prob": 0.19891701054041627
+        },
+        "Draw": {
+          "decimal_odds": 4.3,
+          "implied_prob": 0.23255813953488372,
+          "fair_prob": 0.2201965046912515
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "18e2b8ff6e7459881bc8ea82284bfa81",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Manchester United",
+      "away_team": "Aston Villa",
+      "commence_time": "2026-03-15T14:00:00Z",
+      "hours_to_start": 229.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.05527108373815848,
+      "outcomes": {
+        "Aston Villa": {
+          "decimal_odds": 4.05,
+          "implied_prob": 0.2469135802469136,
+          "fair_prob": 0.23398118649499505
+        },
+        "Manchester United": {
+          "decimal_odds": 1.74,
+          "implied_prob": 0.5747126436781609,
+          "fair_prob": 0.5446113823590402
+        },
+        "Draw": {
+          "decimal_odds": 4.28,
+          "implied_prob": 0.2336448598130841,
+          "fair_prob": 0.22140743114596492
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "44df3d0dc87a1d7970d9ec5f2bf03c25",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Crystal Palace",
+      "away_team": "Leeds United",
+      "commence_time": "2026-03-15T14:00:00Z",
+      "hours_to_start": 229.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.04991294273075053,
+      "outcomes": {
+        "Crystal Palace": {
+          "decimal_odds": 2.24,
+          "implied_prob": 0.4464285714285714,
+          "fair_prob": 0.42520532251697146
+        },
+        "Leeds United": {
+          "decimal_odds": 3.26,
+          "implied_prob": 0.3067484662576687,
+          "fair_prob": 0.29216562037975957
+        },
+        "Draw": {
+          "decimal_odds": 3.37,
+          "implied_prob": 0.29673590504451036,
+          "fair_prob": 0.28262905710326885
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "1b704b460cca3f7bf6cc31f0a7ef5d22",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Nottingham Forest",
+      "away_team": "Fulham",
+      "commence_time": "2026-03-15T14:00:00Z",
+      "hours_to_start": 229.80866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.05030061855201562,
+      "outcomes": {
+        "Fulham": {
+          "decimal_odds": 3.31,
+          "implied_prob": 0.3021148036253776,
+          "fair_prob": 0.2876460303735559
+        },
+        "Nottingham Forest": {
+          "decimal_odds": 2.17,
+          "implied_prob": 0.4608294930875576,
+          "fair_prob": 0.43875961315044704
+        },
+        "Draw": {
+          "decimal_odds": 3.48,
+          "implied_prob": 0.28735632183908044,
+          "fair_prob": 0.2735943564759971
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "0ca99a22a42a6d974f58b6de06c2617f",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Liverpool",
+      "away_team": "Tottenham Hotspur",
+      "commence_time": "2026-03-15T16:30:00Z",
+      "hours_to_start": 232.30866643305555,
+      "bookmaker": "pinnacle",
+      "overround": 0.057514014205744646,
+      "outcomes": {
+        "Liverpool": {
+          "decimal_odds": 1.31,
+          "implied_prob": 0.7633587786259541,
+          "fair_prob": 0.7218427069255262
+        },
+        "Tottenham Hotspur": {
+          "decimal_odds": 7.76,
+          "implied_prob": 0.1288659793814433,
+          "fair_prob": 0.12185746727737623
+        },
+        "Draw": {
+          "decimal_odds": 6.05,
+          "implied_prob": 0.1652892561983471,
+          "fair_prob": 0.15629982579709745
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "5d742adbd3eb4cc8128387cc6353e1fe",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Brentford",
+      "away_team": "Wolverhampton Wanderers",
+      "commence_time": "2026-03-16T20:00:00Z",
+      "hours_to_start": 259.8086664330555,
+      "bookmaker": "pinnacle",
+      "overround": 0.05576557419470962,
+      "outcomes": {
+        "Brentford": {
+          "decimal_odds": 1.56,
+          "implied_prob": 0.641025641025641,
+          "fair_prob": 0.6071666444651659
+        },
+        "Wolverhampton Wanderers": {
+          "decimal_odds": 5.59,
+          "implied_prob": 0.17889087656529518,
+          "fair_prob": 0.16944185426934863
+        },
+        "Draw": {
+          "decimal_odds": 4.24,
+          "implied_prob": 0.23584905660377356,
+          "fair_prob": 0.22339150126548557
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "97ab90a603a65929bd77565a95e00644",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Bournemouth",
+      "away_team": "Manchester United",
+      "commence_time": "2026-03-20T20:00:00Z",
+      "hours_to_start": 355.8086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.05149053038235096,
+      "outcomes": {
+        "Bournemouth": {
+          "decimal_odds": 3.08,
+          "implied_prob": 0.3246753246753247,
+          "fair_prob": 0.30877627072615077
+        },
+        "Manchester United": {
+          "decimal_odds": 2.16,
+          "implied_prob": 0.4629629629629629,
+          "fair_prob": 0.44029208973914086
+        },
+        "Draw": {
+          "decimal_odds": 3.79,
+          "implied_prob": 0.2638522427440633,
+          "fair_prob": 0.25093163953470826
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "6f6891624dbf3d13a1e41a24d2c7bf4c",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Brighton and Hove Albion",
+      "away_team": "Liverpool",
+      "commence_time": "2026-03-21T12:30:00Z",
+      "hours_to_start": 372.3086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.050313421193600494,
+      "outcomes": {
+        "Brighton and Hove Albion": {
+          "decimal_odds": 3.17,
+          "implied_prob": 0.31545741324921134,
+          "fair_prob": 0.30034597947983777
+        },
+        "Liverpool": {
+          "decimal_odds": 2.12,
+          "implied_prob": 0.4716981132075471,
+          "fair_prob": 0.4491022429014555
+        },
+        "Draw": {
+          "decimal_odds": 3.8,
+          "implied_prob": 0.2631578947368421,
+          "fair_prob": 0.2505517776187068
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "5a6fab8da714813d8037b9754f082f7f",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Fulham",
+      "away_team": "Burnley",
+      "commence_time": "2026-03-21T15:00:00Z",
+      "hours_to_start": 374.8086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.055730396013637495,
+      "outcomes": {
+        "Burnley": {
+          "decimal_odds": 6.0,
+          "implied_prob": 0.16666666666666666,
+          "fair_prob": 0.15786858775307416
+        },
+        "Fulham": {
+          "decimal_odds": 1.55,
+          "implied_prob": 0.6451612903225806,
+          "fair_prob": 0.6111042106570612
+        },
+        "Draw": {
+          "decimal_odds": 4.1,
+          "implied_prob": 0.24390243902439027,
+          "fair_prob": 0.23102720158986464
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "70a4161c6b699d029c5e4a2ebdf61fbc",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Everton",
+      "away_team": "Chelsea",
+      "commence_time": "2026-03-21T17:30:00Z",
+      "hours_to_start": 377.3086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.050680204078768165,
+      "outcomes": {
+        "Chelsea": {
+          "decimal_odds": 1.92,
+          "implied_prob": 0.5208333333333334,
+          "fair_prob": 0.4957106180467136
+        },
+        "Everton": {
+          "decimal_odds": 3.74,
+          "implied_prob": 0.267379679144385,
+          "fair_prob": 0.2544824563234465
+        },
+        "Draw": {
+          "decimal_odds": 3.81,
+          "implied_prob": 0.26246719160104987,
+          "fair_prob": 0.24980692562983992
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "997cc590268f6d24e0d2e8d84a6e3389",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Leeds United",
+      "away_team": "Brentford",
+      "commence_time": "2026-03-21T20:00:00Z",
+      "hours_to_start": 379.8086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.04906018440486681,
+      "outcomes": {
+        "Brentford": {
+          "decimal_odds": 2.7,
+          "implied_prob": 0.37037037037037035,
+          "fair_prob": 0.3530496875929782
+        },
+        "Leeds United": {
+          "decimal_odds": 2.55,
+          "implied_prob": 0.3921568627450981,
+          "fair_prob": 0.3738173162749182
+        },
+        "Draw": {
+          "decimal_odds": 3.49,
+          "implied_prob": 0.28653295128939826,
+          "fair_prob": 0.2731329961321035
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "3def90dc9d468dd46508a5afae2d5546",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Newcastle United",
+      "away_team": "Sunderland",
+      "commence_time": "2026-03-22T12:00:00Z",
+      "hours_to_start": 395.8086664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.05307300053676878,
+      "outcomes": {
+        "Newcastle United": {
+          "decimal_odds": 1.6,
+          "implied_prob": 0.625,
+          "fair_prob": 0.5935011150047785
+        },
+        "Sunderland": {
+          "decimal_odds": 5.52,
+          "implied_prob": 0.1811594202898551,
+          "fair_prob": 0.17202930869703728
+        },
+        "Draw": {
+          "decimal_odds": 4.05,
+          "implied_prob": 0.2469135802469136,
+          "fair_prob": 0.23446957629818413
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "1efa28912151d6adc43453fb2302a610",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Aston Villa",
+      "away_team": "West Ham United",
+      "commence_time": "2026-03-22T14:15:00Z",
+      "hours_to_start": 398.0586664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.05350066436297318,
+      "outcomes": {
+        "Aston Villa": {
+          "decimal_odds": 1.81,
+          "implied_prob": 0.5524861878453039,
+          "fair_prob": 0.5244288936252158
+        },
+        "West Ham United": {
+          "decimal_odds": 4.39,
+          "implied_prob": 0.22779043280182235,
+          "fair_prob": 0.21622239122133047
+        },
+        "Draw": {
+          "decimal_odds": 3.66,
+          "implied_prob": 0.27322404371584696,
+          "fair_prob": 0.2593487151534537
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    },
+    {
+      "event_id": "81dd92df69b61ff2716351eea3bd457c",
+      "sport_key": "soccer_epl",
+      "sport_name": "EPL",
+      "home_team": "Tottenham Hotspur",
+      "away_team": "Nottingham Forest",
+      "commence_time": "2026-03-22T14:15:00Z",
+      "hours_to_start": 398.0586664330556,
+      "bookmaker": "pinnacle",
+      "overround": 0.04943318799090357,
+      "outcomes": {
+        "Nottingham Forest": {
+          "decimal_odds": 2.81,
+          "implied_prob": 0.35587188612099646,
+          "fair_prob": 0.3391086637943083
+        },
+        "Tottenham Hotspur": {
+          "decimal_odds": 2.52,
+          "implied_prob": 0.3968253968253968,
+          "fair_prob": 0.37813307351666914
+        },
+        "Draw": {
+          "decimal_odds": 3.37,
+          "implied_prob": 0.29673590504451036,
+          "fair_prob": 0.2827582626890226
+        }
+      },
+      "snapshot_time": "2026-03-06T00:11:28.800841+00:00"
+    }
+  ]
+}

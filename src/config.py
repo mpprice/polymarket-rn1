@@ -26,7 +26,7 @@ class Config:
     max_position_usdc: float = float(os.getenv("MAX_POSITION_USDC", "25"))  # 5% of bankroll
     max_total_exposure_usdc: float = float(os.getenv("MAX_TOTAL_EXPOSURE_USDC", "300"))  # 60% of bankroll
     min_edge_pct: float = float(os.getenv("MIN_EDGE_PCT", "3.0"))
-    max_edge_pct: float = float(os.getenv("MAX_EDGE_PCT", "200.0"))
+    max_edge_pct: float = float(os.getenv("MAX_EDGE_PCT", "25.0"))  # lowered from 200; >25% edges are matching errors
     kelly_fraction: float = float(os.getenv("KELLY_FRACTION", "0.25"))  # quarter Kelly
 
     # Entry price range (RN1's profitable range: 5-40c)

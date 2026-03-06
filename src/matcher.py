@@ -5,6 +5,12 @@ Improvements over V1:
 - Spread/totals market support (not just h2h)
 - Match validation logging for debugging false positives
 - Proper Yes/No -> team mapping for "Will X win?" questions
+
+V3: Integrates ``edge_model.EdgeCalculator`` for rigorous fair probability
+    estimation using sport-specific overround removal (Shin, Power, MWPO),
+    edge confidence scoring, time decay, and proper Kelly sizing.
+    Backwards-compatible: still returns legacy edge dicts that strategy.py
+    expects, but enriched with additional fields.
 """
 import logging
 import re
@@ -13,6 +19,15 @@ from difflib import SequenceMatcher
 from typing import Optional
 
 log = logging.getLogger(__name__)
+
+# ── Edge Model (optional, graceful degradation) ──────────────────────────────
+_edge_calculator = None
+try:
+    from .edge_model import EdgeCalculator, EdgeModelConfig
+    _edge_calculator = EdgeCalculator(EdgeModelConfig())
+    log.info("EdgeCalculator loaded — using advanced overround removal and confidence scoring")
+except ImportError:
+    log.debug("edge_model not available, using legacy edge calculation")
 
 
 # ── Team Name Database ──────────────────────────────────────────────────────
@@ -426,10 +441,62 @@ def _calculate_edges(pm: dict, odds_event: dict, mtype: str, slug: str) -> list[
 
 
 def _calculate_h2h_edges(pm: dict, odds_event: dict) -> list[dict]:
-    """Calculate edge for h2h (moneyline) markets."""
+    """Calculate edge for h2h (moneyline) markets.
+
+    V3: When the EdgeCalculator is available, uses sport-specific overround
+    removal (Shin for soccer, MWPO for US sports, etc.) and enriches edge
+    dicts with confidence, decay, and EV metrics. Falls back to the legacy
+    proportional normalization if the module is unavailable.
+    """
     edges = []
     outcomes = odds_event.get("outcomes", {})
+    sport = pm.get("sport", "")
 
+    # ── Advanced path: use EdgeCalculator ─────────────────────────────────
+    if _edge_calculator is not None:
+        # Build decimal-odds map from the odds_event outcomes
+        odds_map: dict[str, float] = {}
+        for name, data in outcomes.items():
+            dec_odds = data.get("decimal_odds", 0)
+            if dec_odds > 0:
+                odds_map[name] = dec_odds
+
+        if odds_map:
+            # Compute hours to start for time-decay
+            hours_to_start = _hours_until(odds_event.get("commence_time", ""))
+
+            # For each PM outcome, find matching fair prob via the advanced model,
+            # then let EdgeCalculator do overround removal + confidence + decay
+            for i, pm_outcome in enumerate(pm.get("outcomes", [])):
+                pm_price = pm["prices"][i] if i < len(pm["prices"]) else None
+                token_id = pm["token_ids"][i] if i < len(pm["token_ids"]) else None
+                if pm_price is None or token_id is None:
+                    continue
+
+                # First resolve which odds outcome this PM outcome maps to
+                fair_prob = _find_fair_prob_advanced(
+                    pm_outcome, pm.get("question", ""), outcomes, odds_map,
+                    odds_event["home_team"], odds_event["away_team"], sport,
+                )
+                if fair_prob is None:
+                    continue
+
+                result = _edge_calculator.calculate_edge_from_fair_prob(
+                    outcome=pm_outcome,
+                    token_id=token_id,
+                    pm_price=pm_price,
+                    fair_prob=fair_prob,
+                    market_type="h2h",
+                    sport=sport,
+                    hours_to_start=hours_to_start,
+                    liquidity_usd=pm.get("liquidity", 0),
+                )
+                if result is not None:
+                    edges.append(_edge_calculator.result_to_legacy_dict(result))
+
+            return [e for e in edges if abs(e["edge_pct"]) > 1.0]
+
+    # ── Legacy path (proportional normalization) ──────────────────────────
     for i, pm_outcome in enumerate(pm.get("outcomes", [])):
         pm_price = pm["prices"][i] if i < len(pm["prices"]) else None
         token_id = pm["token_ids"][i] if i < len(pm["token_ids"]) else None
@@ -461,6 +528,8 @@ def _calculate_h2h_edges(pm: dict, odds_event: dict) -> list[dict]:
 def _calculate_spread_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]:
     """Calculate edge for spread (handicap) markets.
 
+    V3: Uses EdgeCalculator for confidence scoring and time decay when available.
+
     Polymarket spread slugs: ...-spread-home-2pt5 or ...-spread-away-1pt5
     The Odds API spreads: outcomes with point values like +2.5, -2.5
     """
@@ -476,6 +545,8 @@ def _calculate_spread_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]
     # Determine if this is home or away spread
     is_home = "-home-" in slug.lower()
     is_away = "-away-" in slug.lower()
+    sport = pm.get("sport", "")
+    hours_to_start = _hours_until(odds_event.get("commence_time", "")) if _edge_calculator else 24.0
 
     for i, pm_outcome in enumerate(pm.get("outcomes", [])):
         pm_price = pm["prices"][i] if i < len(pm["prices"]) else None
@@ -490,6 +561,24 @@ def _calculate_spread_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]
         if fair_prob is None:
             continue
 
+        # Use EdgeCalculator if available for confidence + decay enrichment
+        if _edge_calculator is not None:
+            result = _edge_calculator.calculate_edge_from_fair_prob(
+                outcome=pm_outcome,
+                token_id=token_id,
+                pm_price=pm_price,
+                fair_prob=fair_prob,
+                market_type="spread",
+                sport=sport,
+                hours_to_start=hours_to_start,
+                liquidity_usd=pm.get("liquidity", 0),
+                line=pm_spread,
+            )
+            if result is not None:
+                edges.append(_edge_calculator.result_to_legacy_dict(result))
+            continue
+
+        # Legacy fallback
         edge = fair_prob - pm_price
         edge_pct = (edge / pm_price * 100) if pm_price > 0 else 0
 
@@ -509,7 +598,10 @@ def _calculate_spread_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]
 
 
 def _calculate_total_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]:
-    """Calculate edge for totals (over/under) markets."""
+    """Calculate edge for totals (over/under) markets.
+
+    V3: Uses EdgeCalculator for confidence scoring and time decay when available.
+    """
     edges = []
     total_outcomes = odds_event.get("total_outcomes", {})
     if not total_outcomes:
@@ -518,6 +610,9 @@ def _calculate_total_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]:
     pm_total = parse_total_line(slug)
     if pm_total is None:
         return edges
+
+    sport = pm.get("sport", "")
+    hours_to_start = _hours_until(odds_event.get("commence_time", "")) if _edge_calculator else 24.0
 
     for i, pm_outcome in enumerate(pm.get("outcomes", [])):
         pm_price = pm["prices"][i] if i < len(pm["prices"]) else None
@@ -529,6 +624,24 @@ def _calculate_total_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]:
         if fair_prob is None:
             continue
 
+        # Use EdgeCalculator if available
+        if _edge_calculator is not None:
+            result = _edge_calculator.calculate_edge_from_fair_prob(
+                outcome=pm_outcome,
+                token_id=token_id,
+                pm_price=pm_price,
+                fair_prob=fair_prob,
+                market_type="total",
+                sport=sport,
+                hours_to_start=hours_to_start,
+                liquidity_usd=pm.get("liquidity", 0),
+                line=pm_total,
+            )
+            if result is not None:
+                edges.append(_edge_calculator.result_to_legacy_dict(result))
+            continue
+
+        # Legacy fallback
         edge = fair_prob - pm_price
         edge_pct = (edge / pm_price * 100) if pm_price > 0 else 0
 
@@ -547,7 +660,116 @@ def _calculate_total_edges(pm: dict, odds_event: dict, slug: str) -> list[dict]:
     return [e for e in edges if abs(e["edge_pct"]) > 1.0]
 
 
-# ── Fair Probability Finders ────────────────────────────────────────────────
+# ── Helper: hours until event ──────────────────────────────────────────────
+
+def _hours_until(commence_time_iso: str) -> float:
+    """Parse an ISO-8601 commence_time and return hours until that time.
+
+    Returns 24.0 (neutral default) if parsing fails.
+    """
+    if not commence_time_iso:
+        return 24.0
+    try:
+        ct = datetime.fromisoformat(commence_time_iso.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        delta = (ct - now).total_seconds() / 3600.0
+        return max(delta, 0.0)
+    except (ValueError, TypeError):
+        return 24.0
+
+
+# ── Advanced Fair Prob (using EdgeCalculator overround removal) ──────────
+
+def _find_fair_prob_advanced(
+    pm_outcome: str,
+    question: str,
+    odds_outcomes: dict,
+    odds_decimal_map: dict[str, float],
+    home_team: str,
+    away_team: str,
+    sport: str,
+) -> Optional[float]:
+    """Map a PM outcome to a fair probability using the EdgeCalculator's
+    sport-specific overround removal.
+
+    This replaces the legacy ``_find_fair_prob`` which reads pre-computed
+    ``fair_prob`` fields (computed via proportional normalization in
+    ``OddsClient``). Instead, we re-derive fair probabilities using the
+    correct method for the sport.
+    """
+    if _edge_calculator is None:
+        return _find_fair_prob(pm_outcome, question, odds_outcomes, home_team, away_team)
+
+    from .edge_model import OverroundRemoval, SPORT_OVERROUND_DEFAULTS, EdgeModelConfig
+
+    pm_lower = pm_outcome.lower().strip()
+
+    # Build ordered lists of names + implied probs from decimal odds
+    names = list(odds_decimal_map.keys())
+    implied = [1.0 / odds_decimal_map[n] if odds_decimal_map[n] > 0 else 0.0 for n in names]
+
+    # Get sport-specific overround method
+    method = SPORT_OVERROUND_DEFAULTS.get(sport, "proportional")
+    fair_list = OverroundRemoval.remove(implied, method=method)
+
+    fair_map: dict[str, float] = {}
+    for i, name in enumerate(names):
+        if i < len(fair_list):
+            fair_map[name] = fair_list[i]
+
+    # Direct match (team name outcome like "Mavericks", "Arsenal")
+    for name, fp in fair_map.items():
+        if fuzzy_match(pm_lower, name.lower(), 0.7):
+            return fp
+
+    # Draw
+    if pm_lower == "draw":
+        for name, fp in fair_map.items():
+            if name.lower() == "draw":
+                return fp
+        return None
+
+    # "Yes"/"No" on "Will X win?" questions
+    import re as _re
+    team_match = _re.search(r"Will (.+?) (?:win|beat)", question)
+    if not team_match:
+        return None
+
+    question_team = team_match.group(1).strip()
+
+    matched_odds_team = None
+    for name in fair_map:
+        if fuzzy_match(question_team, name, 0.6):
+            matched_odds_team = name
+            break
+    if not matched_odds_team:
+        if fuzzy_match(question_team, home_team, 0.6):
+            for name in fair_map:
+                if fuzzy_match(name, home_team, 0.6):
+                    matched_odds_team = name
+                    break
+        elif fuzzy_match(question_team, away_team, 0.6):
+            for name in fair_map:
+                if fuzzy_match(name, away_team, 0.6):
+                    matched_odds_team = name
+                    break
+
+    if not matched_odds_team:
+        return None
+
+    team_prob = fair_map.get(matched_odds_team)
+    if team_prob is None:
+        return None
+
+    if pm_lower == "yes":
+        return team_prob
+    elif pm_lower == "no":
+        return 1.0 - team_prob
+
+    return None
+
+
+# ── Fair Probability Finders (legacy) ─────────────────────────────────────
 
 def _find_fair_prob(pm_outcome: str, question: str, odds_outcomes: dict,
                     home_team: str, away_team: str) -> Optional[float]:

@@ -3,10 +3,15 @@
 Continuously monitors trade outcomes and learns over time to improve
 edge estimation, market type profitability, sport selection, and timing.
 Persists all history to data/learning_history.json.
+
+Enhanced with true-edge analytics: calibration curves, Brier score,
+rolling edge, edge trends, portfolio metrics, and more.
 """
 import json
 import logging
+import math
 import os
+from collections import defaultdict
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -346,6 +351,418 @@ class LearningAgent:
         }
 
     # ------------------------------------------------------------------
+    # Enhanced analytics methods
+    # ------------------------------------------------------------------
+
+    def calibration_curve(self, n_buckets: int = 10) -> list[dict]:
+        """Return predicted vs actual win rates in fine probability buckets.
+
+        Groups trades by entry_price into equal-width buckets and compares
+        the mean entry price (market's implied probability) to the observed
+        win rate in each bucket. Positive edge means we beat the market.
+
+        Parameters
+        ----------
+        n_buckets : int
+            Number of equal-width buckets across [0, 1].
+
+        Returns
+        -------
+        list[dict]
+            Each dict: {"bucket_mid", "predicted_wr", "actual_wr", "count", "edge"}
+        """
+        if not self.trades:
+            return []
+        bucket_width = 1.0 / n_buckets
+        buckets: dict[int, list[dict]] = defaultdict(list)
+        for t in self.trades:
+            idx = min(int(t["entry_price"] / bucket_width), n_buckets - 1)
+            buckets[idx].append(t)
+
+        result = []
+        for idx in range(n_buckets):
+            trades = buckets.get(idx, [])
+            if not trades:
+                continue
+            predicted = mean(t["entry_price"] for t in trades)
+            actual = sum(1 for t in trades if t["won"]) / len(trades)
+            result.append({
+                "bucket_mid": (idx + 0.5) * bucket_width,
+                "predicted_wr": predicted,
+                "actual_wr": actual,
+                "count": len(trades),
+                "edge": actual - predicted,
+            })
+        return result
+
+    def brier_score(self, sport: str = None, market_type: str = None) -> float:
+        """Brier Score: mean squared error of probability predictions.
+
+        Lower is better. Perfect = 0.0, worst = 1.0.
+        Uses fair_prob_at_entry as the predicted probability.
+
+        Parameters
+        ----------
+        sport : str, optional
+            Filter to specific sport.
+        market_type : str, optional
+            Filter to specific market type.
+
+        Returns
+        -------
+        float
+            Brier score, or -1.0 if no matching trades.
+        """
+        subset = self.trades
+        if sport:
+            subset = [t for t in subset if t["sport"] == sport]
+        if market_type:
+            subset = [t for t in subset if t["market_type"] == market_type]
+        if not subset:
+            return -1.0
+        errors = []
+        for t in subset:
+            predicted = t.get("fair_prob_at_entry", t["entry_price"])
+            actual = 1.0 if t["won"] else 0.0
+            errors.append((predicted - actual) ** 2)
+        return sum(errors) / len(errors)
+
+    def rolling_edge(self, window: int = 20) -> list[dict]:
+        """Rolling edge over the last N trades.
+
+        Edge = actual_win_rate - predicted_win_rate (entry price) over
+        a sliding window. Positive = we are beating the market.
+
+        Parameters
+        ----------
+        window : int
+            Rolling window size.
+
+        Returns
+        -------
+        list[dict]
+            Each dict: {"trade_idx", "rolling_wr", "rolling_predicted",
+                        "rolling_edge", "rolling_pnl"}
+        """
+        sorted_trades = sorted(self.trades,
+                               key=lambda t: t.get("resolved_at", ""))
+        if len(sorted_trades) < window:
+            return []
+        result = []
+        for i in range(window, len(sorted_trades) + 1):
+            chunk = sorted_trades[i - window:i]
+            actual_wr = sum(1 for t in chunk if t["won"]) / window
+            predicted_wr = mean(t["entry_price"] for t in chunk)
+            pnl = sum(t["pnl"] for t in chunk)
+            result.append({
+                "trade_idx": i,
+                "rolling_wr": actual_wr,
+                "rolling_predicted": predicted_wr,
+                "rolling_edge": actual_wr - predicted_wr,
+                "rolling_pnl": pnl,
+            })
+        return result
+
+    def edge_trend(self, window: int = 20) -> dict:
+        """Linear regression of rolling edge -- is our edge improving?
+
+        Returns
+        -------
+        dict
+            {"slope", "r_squared", "improving", "edge_change_per_100_trades"}
+        """
+        rolling = self.rolling_edge(window)
+        if len(rolling) < 3:
+            return {"slope": 0.0, "r_squared": 0.0, "improving": False,
+                    "edge_change_per_100_trades": 0.0}
+        xs = [float(r["trade_idx"]) for r in rolling]
+        ys = [r["rolling_edge"] for r in rolling]
+        n = len(xs)
+        mx = sum(xs) / n
+        my = sum(ys) / n
+        ss_xx = sum((x - mx) ** 2 for x in xs)
+        ss_xy = sum((xs[i] - mx) * (ys[i] - my) for i in range(n))
+        ss_yy = sum((y - my) ** 2 for y in ys)
+        if ss_xx == 0:
+            return {"slope": 0.0, "r_squared": 0.0, "improving": False,
+                    "edge_change_per_100_trades": 0.0}
+        b = ss_xy / ss_xx
+        r_sq = (ss_xy ** 2) / (ss_xx * ss_yy) if ss_yy != 0 else 0.0
+        return {
+            "slope": b,
+            "r_squared": r_sq,
+            "improving": b > 0,
+            "edge_change_per_100_trades": b * 100,
+        }
+
+    def optimal_kelly_fraction(self) -> float:
+        """Based on actual results, what Kelly fraction maximizes growth?
+
+        Kelly f* = (p * b - q) / b where:
+        - p = actual win rate
+        - q = 1 - p
+        - b = average odds received (net profit per $1 wagered on a win)
+
+        Returns
+        -------
+        float
+            Optimal full Kelly fraction (0.0 if no edge). In practice,
+            use 0.25x to 0.50x of this value.
+        """
+        if not self.trades:
+            return 0.0
+        n = len(self.trades)
+        p = sum(1 for t in self.trades if t["won"]) / n
+        q = 1 - p
+
+        # Average net profit per $1 risked on winners
+        winners = [t for t in self.trades if t["won"]]
+        if not winners or p == 0:
+            return 0.0
+        avg_odds = mean((1.0 / t["entry_price"] - 1.0) for t in winners
+                        if t["entry_price"] > 0)
+        if avg_odds <= 0:
+            return 0.0
+
+        kelly = (p * avg_odds - q) / avg_odds
+        return max(kelly, 0.0)
+
+    def sport_allocation_weights(self) -> dict[str, float]:
+        """Capital allocation weights based on sport_scores.
+
+        Normalizes sport scores to sum to 1.0, giving the recommended
+        percentage of capital to allocate to each sport.
+
+        Returns
+        -------
+        dict[str, float]
+            Sport -> weight (0.0 - 1.0), summing to 1.0.
+        """
+        scores = self.sport_scores()
+        if not scores:
+            return {}
+        total = sum(max(s, 0) for s in scores.values())
+        if total <= 0:
+            # Equal weight
+            n = len(scores)
+            return {sport: 1.0 / n for sport in scores}
+        return {sport: max(s, 0) / total for sport, s in scores.items()}
+
+    def daily_pnl_series(self) -> list[tuple]:
+        """List of (date_str, pnl) tuples for charting.
+
+        Aggregates PnL by resolution date.
+
+        Returns
+        -------
+        list[tuple[str, float]]
+            Sorted by date ascending.
+        """
+        by_date: dict[str, float] = defaultdict(float)
+        for t in self.trades:
+            try:
+                dt = datetime.fromisoformat(t.get("resolved_at", ""))
+                day = dt.strftime("%Y-%m-%d")
+                by_date[day] += t["pnl"]
+            except (ValueError, KeyError):
+                continue
+        return sorted(by_date.items())
+
+    def cumulative_pnl_series(self) -> list[tuple]:
+        """Cumulative PnL over time.
+
+        Returns
+        -------
+        list[tuple[str, float]]
+            (date_str, cumulative_pnl) sorted by date ascending.
+        """
+        daily = self.daily_pnl_series()
+        cum = 0.0
+        result = []
+        for date, pnl in daily:
+            cum += pnl
+            result.append((date, cum))
+        return result
+
+    def max_drawdown(self) -> float:
+        """Largest peak-to-trough decline in cumulative PnL.
+
+        Returns
+        -------
+        float
+            Maximum drawdown in USDC (positive number).
+        """
+        cum = self.cumulative_pnl_series()
+        if not cum:
+            return 0.0
+        peak = cum[0][1]
+        max_dd = 0.0
+        for _, val in cum:
+            if val > peak:
+                peak = val
+            dd = peak - val
+            if dd > max_dd:
+                max_dd = dd
+        return max_dd
+
+    def sharpe_ratio(self, annualize: bool = True) -> float:
+        """Annualized Sharpe ratio of daily PnL.
+
+        Returns
+        -------
+        float
+            Sharpe ratio, or 0.0 if insufficient data.
+        """
+        daily = self.daily_pnl_series()
+        if len(daily) < 2:
+            return 0.0
+        pnls = [pnl for _, pnl in daily]
+        m = mean(pnls)
+        try:
+            s = stdev(pnls)
+        except Exception:
+            return 0.0
+        if s == 0:
+            return 0.0 if m == 0 else float("inf")
+        ratio = m / s
+        if annualize:
+            ratio *= math.sqrt(365)
+        return ratio
+
+    def profit_factor(self) -> float:
+        """Gross wins / gross losses. > 1.0 means profitable.
+
+        Returns
+        -------
+        float
+            Profit factor, or float('inf') if no losses.
+        """
+        gross_profit = sum(t["pnl"] for t in self.trades if t["pnl"] > 0)
+        gross_loss = abs(sum(t["pnl"] for t in self.trades if t["pnl"] < 0))
+        if gross_loss == 0:
+            return float("inf") if gross_profit > 0 else 0.0
+        return gross_profit / gross_loss
+
+    def avg_hold_time(self) -> float:
+        """Average time from open to resolution in hours.
+
+        Returns
+        -------
+        float
+            Average hold time in hours, or 0.0 if unable to compute.
+        """
+        hold_times = []
+        for t in self.trades:
+            try:
+                opened = datetime.fromisoformat(t["opened_at"])
+                resolved = datetime.fromisoformat(t["resolved_at"])
+                hours = (resolved - opened).total_seconds() / 3600
+                if hours >= 0:
+                    hold_times.append(hours)
+            except (ValueError, KeyError):
+                continue
+        return mean(hold_times) if hold_times else 0.0
+
+    def edge_by_hour(self) -> dict[int, dict]:
+        """Most profitable hours to trade (UTC).
+
+        Returns
+        -------
+        dict[int, dict]
+            Hour -> {"count", "win_rate", "avg_pnl", "total_pnl"}
+        """
+        by_hour: dict[int, list[dict]] = defaultdict(list)
+        for t in self.trades:
+            try:
+                dt = datetime.fromisoformat(t["opened_at"])
+                by_hour[dt.hour].append(t)
+            except (ValueError, KeyError):
+                continue
+        result = {}
+        for h, trades in sorted(by_hour.items()):
+            result[h] = {
+                "count": len(trades),
+                "win_rate": sum(1 for t in trades if t["won"]) / len(trades),
+                "avg_pnl": mean(t["pnl"] for t in trades),
+                "total_pnl": sum(t["pnl"] for t in trades),
+            }
+        return result
+
+    def edge_by_weekday(self) -> dict[str, dict]:
+        """Most profitable days of the week.
+
+        Returns
+        -------
+        dict[str, dict]
+            Day name -> {"count", "win_rate", "avg_pnl", "total_pnl"}
+        """
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday",
+                     "Friday", "Saturday", "Sunday"]
+        by_day: dict[int, list[dict]] = defaultdict(list)
+        for t in self.trades:
+            try:
+                dt = datetime.fromisoformat(t["opened_at"])
+                by_day[dt.weekday()].append(t)
+            except (ValueError, KeyError):
+                continue
+        result = {}
+        for d_idx, trades in sorted(by_day.items()):
+            result[day_names[d_idx]] = {
+                "count": len(trades),
+                "win_rate": sum(1 for t in trades if t["won"]) / len(trades),
+                "avg_pnl": mean(t["pnl"] for t in trades),
+                "total_pnl": sum(t["pnl"] for t in trades),
+            }
+        return result
+
+    def current_streak(self) -> dict:
+        """Current win/loss streak.
+
+        Returns
+        -------
+        dict
+            {"type": "win"|"loss"|"none", "length": int}
+        """
+        if not self.trades:
+            return {"type": "none", "length": 0}
+        sorted_trades = sorted(self.trades,
+                               key=lambda t: t.get("resolved_at", ""))
+        streak_type = "win" if sorted_trades[-1]["won"] else "loss"
+        length = 0
+        for t in reversed(sorted_trades):
+            if (t["won"] and streak_type == "win") or \
+               (not t["won"] and streak_type == "loss"):
+                length += 1
+            else:
+                break
+        return {"type": streak_type, "length": length}
+
+    def best_worst_trades(self, n: int = 5) -> dict:
+        """Top N best and worst trades by PnL.
+
+        Returns
+        -------
+        dict
+            {"best": list[dict], "worst": list[dict]}
+        """
+        if not self.trades:
+            return {"best": [], "worst": []}
+        sorted_by_pnl = sorted(self.trades, key=lambda t: t["pnl"])
+        def _summary(t: dict) -> dict:
+            return {
+                "slug": t.get("slug", ""),
+                "sport": t["sport"],
+                "market_type": t["market_type"],
+                "entry_price": t["entry_price"],
+                "edge_pct": t["edge_pct_at_entry"],
+                "pnl": t["pnl"],
+                "won": t["won"],
+            }
+        worst = [_summary(t) for t in sorted_by_pnl[:n]]
+        best = [_summary(t) for t in sorted_by_pnl[-n:][::-1]]
+        return {"best": best, "worst": worst}
+
+    # ------------------------------------------------------------------
     # Reporting
     # ------------------------------------------------------------------
 
@@ -375,6 +792,16 @@ class LearningAgent:
             "by_bookmaker": self.win_rate_by_bookmaker(),
             "by_hour": self.profitable_hours(),
             "sport_scores": self.sport_scores(),
+            # Enhanced metrics
+            "sharpe_ratio": self.sharpe_ratio(),
+            "max_drawdown": self.max_drawdown(),
+            "profit_factor": self.profit_factor(),
+            "avg_hold_time_hours": self.avg_hold_time(),
+            "brier_score": self.brier_score(),
+            "optimal_kelly": self.optimal_kelly_fraction(),
+            "current_streak": self.current_streak(),
+            "sport_allocation": self.sport_allocation_weights(),
+            "edge_trend": self.edge_trend(),
         }
 
     def print_report(self):

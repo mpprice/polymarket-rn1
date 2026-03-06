@@ -1,0 +1,1982 @@
+[
+  {
+    "id": "07e3e6c1966c98bce260a6608d692f73",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-14T15:00:00Z",
+    "home_team": "Burnley",
+    "away_team": "Bournemouth",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 1.92
+              },
+              {
+                "name": "Burnley",
+                "price": 4.0
+              },
+              {
+                "name": "Draw",
+                "price": 3.9
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 1.99
+              },
+              {
+                "name": "Burnley",
+                "price": 4.5
+              },
+              {
+                "name": "Draw",
+                "price": 3.95
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 1.85
+              },
+              {
+                "name": "Burnley",
+                "price": 3.91
+              },
+              {
+                "name": "Draw",
+                "price": 3.91
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 1.85,
+                "point": -0.5
+              },
+              {
+                "name": "Burnley",
+                "price": 2.0,
+                "point": 0.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.92,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.92,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "9c44263754509bd50f8db5429ca3d264",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-14T15:00:00Z",
+    "home_team": "Sunderland",
+    "away_team": "Brighton and Hove Albion",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 2.3
+              },
+              {
+                "name": "Sunderland",
+                "price": 3.05
+              },
+              {
+                "name": "Draw",
+                "price": 3.35
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 2.52
+              },
+              {
+                "name": "Sunderland",
+                "price": 3.45
+              },
+              {
+                "name": "Draw",
+                "price": 3.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 2.19
+              },
+              {
+                "name": "Sunderland",
+                "price": 3.31
+              },
+              {
+                "name": "Draw",
+                "price": 3.44
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 1.89,
+                "point": -0.25
+              },
+              {
+                "name": "Sunderland",
+                "price": 1.96,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.04,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.81,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "0962092236bc521dd9eb0ea41ef8b8c0",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-14T17:30:00Z",
+    "home_team": "Arsenal",
+    "away_team": "Everton",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Arsenal",
+                "price": 1.35
+              },
+              {
+                "name": "Everton",
+                "price": 13.0
+              },
+              {
+                "name": "Draw",
+                "price": 5.4
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Arsenal",
+                "price": 1.36
+              },
+              {
+                "name": "Everton",
+                "price": 13.5
+              },
+              {
+                "name": "Draw",
+                "price": 5.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Arsenal",
+                "price": 1.29
+              },
+              {
+                "name": "Everton",
+                "price": 10.99
+              },
+              {
+                "name": "Draw",
+                "price": 5.29
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Arsenal",
+                "price": 1.92,
+                "point": -1.5
+              },
+              {
+                "name": "Everton",
+                "price": 1.93,
+                "point": 1.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.02,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.83,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "2beaea2705eda4c075d7aa55a068d5ab",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-14T17:30:00Z",
+    "home_team": "Chelsea",
+    "away_team": "Newcastle United",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.82
+              },
+              {
+                "name": "Newcastle United",
+                "price": 4.0
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.85
+              },
+              {
+                "name": "Newcastle United",
+                "price": 4.5
+              },
+              {
+                "name": "Draw",
+                "price": 4.9
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.78
+              },
+              {
+                "name": "Newcastle United",
+                "price": 3.86
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 2.0,
+                "point": -0.75
+              },
+              {
+                "name": "Newcastle United",
+                "price": 1.85,
+                "point": 0.75
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.98,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.85,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "da5bec9f0dc4903170736d22277ee47e",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-14T20:00:00Z",
+    "home_team": "West Ham United",
+    "away_team": "Manchester City",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Manchester City",
+                "price": 1.67
+              },
+              {
+                "name": "West Ham United",
+                "price": 5.0
+              },
+              {
+                "name": "Draw",
+                "price": 4.6
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Manchester City",
+                "price": 1.69
+              },
+              {
+                "name": "West Ham United",
+                "price": 5.2
+              },
+              {
+                "name": "Draw",
+                "price": 4.8
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Manchester City",
+                "price": 1.63
+              },
+              {
+                "name": "West Ham United",
+                "price": 4.76
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Manchester City",
+                "price": 1.83,
+                "point": -0.75
+              },
+              {
+                "name": "West Ham United",
+                "price": 2.04,
+                "point": 0.75
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.03,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.82,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "18e2b8ff6e7459881bc8ea82284bfa81",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-15T14:00:00Z",
+    "home_team": "Manchester United",
+    "away_team": "Aston Villa",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 4.5
+              },
+              {
+                "name": "Manchester United",
+                "price": 1.73
+              },
+              {
+                "name": "Draw",
+                "price": 4.2
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 4.9
+              },
+              {
+                "name": "Manchester United",
+                "price": 1.82
+              },
+              {
+                "name": "Draw",
+                "price": 4.7
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 4.05
+              },
+              {
+                "name": "Manchester United",
+                "price": 1.74
+              },
+              {
+                "name": "Draw",
+                "price": 4.28
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 1.88,
+                "point": 0.75
+              },
+              {
+                "name": "Manchester United",
+                "price": 1.97,
+                "point": -0.75
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.85,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.99,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "44df3d0dc87a1d7970d9ec5f2bf03c25",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-15T14:00:00Z",
+    "home_team": "Crystal Palace",
+    "away_team": "Leeds United",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Crystal Palace",
+                "price": 2.34
+              },
+              {
+                "name": "Leeds United",
+                "price": 3.4
+              },
+              {
+                "name": "Draw",
+                "price": 3.4
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Crystal Palace",
+                "price": 2.38
+              },
+              {
+                "name": "Leeds United",
+                "price": 3.45
+              },
+              {
+                "name": "Draw",
+                "price": 3.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Crystal Palace",
+                "price": 2.24
+              },
+              {
+                "name": "Leeds United",
+                "price": 3.26
+              },
+              {
+                "name": "Draw",
+                "price": 3.37
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Crystal Palace",
+                "price": 1.93,
+                "point": -0.25
+              },
+              {
+                "name": "Leeds United",
+                "price": 1.92,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.82,
+                "point": 2.25
+              },
+              {
+                "name": "Under",
+                "price": 2.03,
+                "point": 2.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1b704b460cca3f7bf6cc31f0a7ef5d22",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-15T14:00:00Z",
+    "home_team": "Nottingham Forest",
+    "away_team": "Fulham",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Fulham",
+                "price": 3.65
+              },
+              {
+                "name": "Nottingham Forest",
+                "price": 2.12
+              },
+              {
+                "name": "Draw",
+                "price": 3.65
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Fulham",
+                "price": 3.8
+              },
+              {
+                "name": "Nottingham Forest",
+                "price": 2.18
+              },
+              {
+                "name": "Draw",
+                "price": 3.75
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Fulham",
+                "price": 3.31
+              },
+              {
+                "name": "Nottingham Forest",
+                "price": 2.17
+              },
+              {
+                "name": "Draw",
+                "price": 3.48
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Fulham",
+                "price": 1.97,
+                "point": 0.25
+              },
+              {
+                "name": "Nottingham Forest",
+                "price": 1.88,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.82,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 2.03,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "0ca99a22a42a6d974f58b6de06c2617f",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-15T16:30:00Z",
+    "home_team": "Liverpool",
+    "away_team": "Tottenham Hotspur",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Liverpool",
+                "price": 1.34
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 8.4
+              },
+              {
+                "name": "Draw",
+                "price": 5.8
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Liverpool",
+                "price": 1.35
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 11.0
+              },
+              {
+                "name": "Draw",
+                "price": 6.8
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Liverpool",
+                "price": 1.31
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 7.76
+              },
+              {
+                "name": "Draw",
+                "price": 6.05
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Liverpool",
+                "price": 1.92,
+                "point": -1.5
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 1.93,
+                "point": 1.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.96,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.88,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5d742adbd3eb4cc8128387cc6353e1fe",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-16T20:00:00Z",
+    "home_team": "Brentford",
+    "away_team": "Wolverhampton Wanderers",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.63
+              },
+              {
+                "name": "Wolverhampton Wanderers",
+                "price": 5.6
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.66
+              },
+              {
+                "name": "Wolverhampton Wanderers",
+                "price": 6.8
+              },
+              {
+                "name": "Draw",
+                "price": 4.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.56
+              },
+              {
+                "name": "Wolverhampton Wanderers",
+                "price": 5.59
+              },
+              {
+                "name": "Draw",
+                "price": 4.24
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.96,
+                "point": -1.0
+              },
+              {
+                "name": "Wolverhampton Wanderers",
+                "price": 1.89,
+                "point": 1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.92,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.92,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "97ab90a603a65929bd77565a95e00644",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-20T20:00:00Z",
+    "home_team": "Bournemouth",
+    "away_team": "Manchester United",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 3.08
+              },
+              {
+                "name": "Manchester United",
+                "price": 2.16
+              },
+              {
+                "name": "Draw",
+                "price": 3.79
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 1.95,
+                "point": 0.25
+              },
+              {
+                "name": "Manchester United",
+                "price": 1.9,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.83,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 2.02,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 3.15
+              },
+              {
+                "name": "Manchester United",
+                "price": 2.08
+              },
+              {
+                "name": "Draw",
+                "price": 3.9
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bournemouth",
+                "price": 3.5
+              },
+              {
+                "name": "Manchester United",
+                "price": 2.32
+              },
+              {
+                "name": "Draw",
+                "price": 4.4
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6f6891624dbf3d13a1e41a24d2c7bf4c",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-21T12:30:00Z",
+    "home_team": "Brighton and Hove Albion",
+    "away_team": "Liverpool",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 3.17
+              },
+              {
+                "name": "Liverpool",
+                "price": 2.12
+              },
+              {
+                "name": "Draw",
+                "price": 3.8
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 2.0,
+                "point": 0.25
+              },
+              {
+                "name": "Liverpool",
+                "price": 1.86,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.87,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 1.97,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 1.09
+              },
+              {
+                "name": "Liverpool",
+                "price": 2.08
+              },
+              {
+                "name": "Draw",
+                "price": 1.09
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brighton and Hove Albion",
+                "price": 110.0
+              },
+              {
+                "name": "Liverpool",
+                "price": 2.32
+              },
+              {
+                "name": "Draw",
+                "price": 5.3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5a6fab8da714813d8037b9754f082f7f",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-21T15:00:00Z",
+    "home_team": "Fulham",
+    "away_team": "Burnley",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Burnley",
+                "price": 6.0
+              },
+              {
+                "name": "Fulham",
+                "price": 1.55
+              },
+              {
+                "name": "Draw",
+                "price": 4.1
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Burnley",
+                "price": 1.96,
+                "point": 1.0
+              },
+              {
+                "name": "Fulham",
+                "price": 1.88,
+                "point": -1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.82,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 2.03,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Burnley",
+                "price": 1.3
+              },
+              {
+                "name": "Fulham",
+                "price": 1.51
+              },
+              {
+                "name": "Draw",
+                "price": 1.01
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Burnley",
+                "price": 970.0
+              },
+              {
+                "name": "Fulham",
+                "price": 110.0
+              },
+              {
+                "name": "Draw",
+                "price": 5.7
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "70a4161c6b699d029c5e4a2ebdf61fbc",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-21T17:30:00Z",
+    "home_team": "Everton",
+    "away_team": "Chelsea",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.92
+              },
+              {
+                "name": "Everton",
+                "price": 3.74
+              },
+              {
+                "name": "Draw",
+                "price": 3.81
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.93,
+                "point": -0.5
+              },
+              {
+                "name": "Everton",
+                "price": 1.93,
+                "point": 0.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.93,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.9,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 1.92
+              },
+              {
+                "name": "Everton",
+                "price": 3.75
+              },
+              {
+                "name": "Draw",
+                "price": 3.7
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Chelsea",
+                "price": 2.08
+              },
+              {
+                "name": "Everton",
+                "price": 4.8
+              },
+              {
+                "name": "Draw",
+                "price": 4.1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "997cc590268f6d24e0d2e8d84a6e3389",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-21T20:00:00Z",
+    "home_team": "Leeds United",
+    "away_team": "Brentford",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 2.7
+              },
+              {
+                "name": "Leeds United",
+                "price": 2.55
+              },
+              {
+                "name": "Draw",
+                "price": 3.49
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.98,
+                "point": -0.0
+              },
+              {
+                "name": "Leeds United",
+                "price": 1.87,
+                "point": 0.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.93,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.9,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 1.39
+              },
+              {
+                "name": "Leeds United",
+                "price": 2.6
+              },
+              {
+                "name": "Draw",
+                "price": 1.09
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Brentford",
+                "price": 2.96
+              },
+              {
+                "name": "Leeds United",
+                "price": 970.0
+              },
+              {
+                "name": "Draw",
+                "price": 3.65
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3def90dc9d468dd46508a5afae2d5546",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-22T12:00:00Z",
+    "home_team": "Newcastle United",
+    "away_team": "Sunderland",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Newcastle United",
+                "price": 1.6
+              },
+              {
+                "name": "Sunderland",
+                "price": 5.52
+              },
+              {
+                "name": "Draw",
+                "price": 4.05
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Newcastle United",
+                "price": 1.79,
+                "point": -0.75
+              },
+              {
+                "name": "Sunderland",
+                "price": 2.09,
+                "point": 0.75
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.85,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.98,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Newcastle United",
+                "price": 1.66
+              },
+              {
+                "name": "Sunderland",
+                "price": 5.3
+              },
+              {
+                "name": "Draw",
+                "price": 4.1
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Newcastle United",
+                "price": 1.71
+              },
+              {
+                "name": "Sunderland",
+                "price": 5.8
+              },
+              {
+                "name": "Draw",
+                "price": 4.4
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1efa28912151d6adc43453fb2302a610",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-22T14:15:00Z",
+    "home_team": "Aston Villa",
+    "away_team": "West Ham United",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 1.81
+              },
+              {
+                "name": "West Ham United",
+                "price": 4.39
+              },
+              {
+                "name": "Draw",
+                "price": 3.66
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 1.82,
+                "point": -0.5
+              },
+              {
+                "name": "West Ham United",
+                "price": 2.04,
+                "point": 0.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:40Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.86,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.97,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 1.82
+              },
+              {
+                "name": "West Ham United",
+                "price": 1.32
+              },
+              {
+                "name": "Draw",
+                "price": 1.09
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Aston Villa",
+                "price": 2.14
+              },
+              {
+                "name": "West Ham United",
+                "price": 110.0
+              },
+              {
+                "name": "Draw",
+                "price": 4.2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "81dd92df69b61ff2716351eea3bd457c",
+    "sport_key": "soccer_epl",
+    "sport_title": "EPL",
+    "commence_time": "2026-03-22T14:15:00Z",
+    "home_team": "Tottenham Hotspur",
+    "away_team": "Nottingham Forest",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:09:40Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Nottingham Forest",
+                "price": 2.81
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 2.52
+              },
+              {
+                "name": "Draw",
+                "price": 3.37
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Nottingham Forest",
+                "price": 2.04,
+                "point": -0.0
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 1.83,
+                "point": 0.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:39Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.9,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.93,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Nottingham Forest",
+                "price": 2.8
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 2.62
+              },
+              {
+                "name": "Draw",
+                "price": 3.4
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Nottingham Forest",
+                "price": 2.86
+              },
+              {
+                "name": "Tottenham Hotspur",
+                "price": 2.78
+              },
+              {
+                "name": "Draw",
+                "price": 3.7
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

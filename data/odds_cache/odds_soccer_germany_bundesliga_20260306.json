@@ -1,0 +1,2593 @@
+[
+  {
+    "id": "3f799964bc11557faab5080b396f7b2c",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-06T19:30:00Z",
+    "home_team": "Bayern Munich",
+    "away_team": "Borussia Monchengladbach",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.18
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 16.5
+              },
+              {
+                "name": "Draw",
+                "price": 10.5
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.19
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 17.0
+              },
+              {
+                "name": "Draw",
+                "price": 11.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.14
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 15.29
+              },
+              {
+                "name": "Draw",
+                "price": 9.91
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.89,
+                "point": -2.25
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 2.0,
+                "point": 2.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.02,
+                "point": 4.0
+              },
+              {
+                "name": "Under",
+                "price": 1.86,
+                "point": 4.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.18
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 16.5
+              },
+              {
+                "name": "Draw",
+                "price": 10.5
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.19
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 17.0
+              },
+              {
+                "name": "Draw",
+                "price": 11.0
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayern Munich",
+                "price": 1.91,
+                "point": -2.25
+              },
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 2.02,
+                "point": 2.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "9dce789378f66f0023be8fe488cfe9e6",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T14:30:00Z",
+    "home_team": "1. FC Heidenheim",
+    "away_team": "TSG Hoffenheim",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.3
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.67
+              },
+              {
+                "name": "Draw",
+                "price": 4.6
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.5
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.68
+              },
+              {
+                "name": "Draw",
+                "price": 4.7
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.01
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.62
+              },
+              {
+                "name": "Draw",
+                "price": 4.55
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 1.92,
+                "point": 1.0
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.99,
+                "point": -1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.01,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.88,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.3
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.67
+              },
+              {
+                "name": "Draw",
+                "price": 4.6
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.5
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.68
+              },
+              {
+                "name": "Draw",
+                "price": 4.7
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 1.91,
+                "point": 1.0
+              },
+              {
+                "name": "TSG Hoffenheim",
+                "price": 2.04,
+                "point": -1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.3,
+                "point": 3.5
+              },
+              {
+                "name": "Under",
+                "price": 1.73,
+                "point": 3.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "732f76c620da2120966a7e98851e2902",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T14:30:00Z",
+    "home_team": "RB Leipzig",
+    "away_team": "Augsburg",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 7.2
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.47
+              },
+              {
+                "name": "Draw",
+                "price": 5.3
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 7.6
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.48
+              },
+              {
+                "name": "Draw",
+                "price": 5.4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 6.58
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.44
+              },
+              {
+                "name": "Draw",
+                "price": 5.17
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 1.98,
+                "point": 1.25
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.93,
+                "point": -1.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.93,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.96,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 7.2
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.47
+              },
+              {
+                "name": "Draw",
+                "price": 5.3
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 7.6
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.48
+              },
+              {
+                "name": "Draw",
+                "price": 5.4
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 1.99,
+                "point": 1.25
+              },
+              {
+                "name": "RB Leipzig",
+                "price": 1.95,
+                "point": -1.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.22,
+                "point": 3.5
+              },
+              {
+                "name": "Under",
+                "price": 1.79,
+                "point": 3.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "b9765ee78f283efddeb2eac94ba39d86",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T14:30:00Z",
+    "home_team": "SC Freiburg",
+    "away_team": "Bayer Leverkusen",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.48
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 3.1
+              },
+              {
+                "name": "Draw",
+                "price": 3.55
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.52
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 3.15
+              },
+              {
+                "name": "Draw",
+                "price": 3.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.46
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 2.98
+              },
+              {
+                "name": "Draw",
+                "price": 3.44
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.13,
+                "point": -0.25
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 1.81,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.9,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.98,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.48
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 3.1
+              },
+              {
+                "name": "Draw",
+                "price": 3.55
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.52
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 3.15
+              },
+              {
+                "name": "Draw",
+                "price": 3.6
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 2.12,
+                "point": -0.25
+              },
+              {
+                "name": "SC Freiburg",
+                "price": 1.85,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.94,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 2.02,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "570dd4325529fde8355904fffc7f0a82",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T14:30:00Z",
+    "home_team": "FSV Mainz 05",
+    "away_team": "VfB Stuttgart",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.35
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.24
+              },
+              {
+                "name": "Draw",
+                "price": 3.85
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.45
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.26
+              },
+              {
+                "name": "Draw",
+                "price": 3.95
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.23
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.18
+              },
+              {
+                "name": "Draw",
+                "price": 3.77
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 1.99,
+                "point": 0.25
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 1.91,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.99,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 1.9,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.35
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.24
+              },
+              {
+                "name": "Draw",
+                "price": 3.85
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.4
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.26
+              },
+              {
+                "name": "Draw",
+                "price": 3.95
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 2.02,
+                "point": 0.25
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 1.94,
+                "point": -0.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "17945ac4f8d35cf9d71d0519b132d0f3",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T14:30:00Z",
+    "home_team": "VfL Wolfsburg",
+    "away_team": "Hamburger SV",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 3.05
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.44
+              },
+              {
+                "name": "Draw",
+                "price": 3.7
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 3.15
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.46
+              },
+              {
+                "name": "Draw",
+                "price": 3.75
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 2.95
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.4
+              },
+              {
+                "name": "Draw",
+                "price": 3.6
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 1.83,
+                "point": 0.25
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.09,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.9,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.99,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 3.05
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.44
+              },
+              {
+                "name": "Draw",
+                "price": 3.7
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 3.15
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.46
+              },
+              {
+                "name": "Draw",
+                "price": 3.75
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Hamburger SV",
+                "price": 1.88,
+                "point": 0.25
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.1,
+                "point": -0.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "76d82a37f015220c2a482182558b6d39",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-07T17:30:00Z",
+    "home_team": "1. FC K\u00f6ln",
+    "away_team": "Borussia Dortmund",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.5
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.84
+              },
+              {
+                "name": "Draw",
+                "price": 4.2
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.6
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.86
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.26
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.8
+              },
+              {
+                "name": "Draw",
+                "price": 4.07
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 1.89,
+                "point": 0.75
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 2.02,
+                "point": -0.75
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.96,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 1.93,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.5
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.85
+              },
+              {
+                "name": "Draw",
+                "price": 4.2
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.6
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.86
+              },
+              {
+                "name": "Draw",
+                "price": 4.3
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 1.92,
+                "point": 0.75
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 2.04,
+                "point": -0.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "f58c97b69edd608438d13138b83d23e8",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-08T14:30:00Z",
+    "home_team": "FC St. Pauli",
+    "away_team": "Eintracht Frankfurt",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 2.68
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.86
+              },
+              {
+                "name": "Draw",
+                "price": 3.45
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 2.74
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.96
+              },
+              {
+                "name": "Draw",
+                "price": 3.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 2.59
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.82
+              },
+              {
+                "name": "Draw",
+                "price": 3.42
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.88,
+                "point": -0.0
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.04,
+                "point": 0.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.06,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.84,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 2.68
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.86
+              },
+              {
+                "name": "Draw",
+                "price": 3.45
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 2.74
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.94
+              },
+              {
+                "name": "Draw",
+                "price": 3.5
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.91,
+                "point": 0.0
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 2.04,
+                "point": 0.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.06,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.92,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "d86bd4953bacc7075ba530870c09e607",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-08T16:30:00Z",
+    "home_team": "Union Berlin",
+    "away_team": "Werder Bremen",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.34
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 3.45
+              },
+              {
+                "name": "Draw",
+                "price": 3.45
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.36
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 3.5
+              },
+              {
+                "name": "Draw",
+                "price": 3.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.24
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 3.41
+              },
+              {
+                "name": "Draw",
+                "price": 3.39
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 1.93,
+                "point": -0.25
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 1.97,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.83,
+                "point": 2.25
+              },
+              {
+                "name": "Under",
+                "price": 2.08,
+                "point": 2.25
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "matchbook",
+        "title": "Matchbook",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.34
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 3.45
+              },
+              {
+                "name": "Draw",
+                "price": 3.45
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.36
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 3.5
+              },
+              {
+                "name": "Draw",
+                "price": 3.5
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Union Berlin",
+                "price": 2.0,
+                "point": -0.25
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 1.97,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.12,
+                "point": 2.5
+              },
+              {
+                "name": "Under",
+                "price": 1.84,
+                "point": 2.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "9a9954faf09684f6ca5b1ae9b936927c",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-13T19:30:00Z",
+    "home_team": "Borussia Monchengladbach",
+    "away_team": "FC St. Pauli",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 1.98
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 4.0
+              },
+              {
+                "name": "Draw",
+                "price": 2.94
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 2.36
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 5.5
+              },
+              {
+                "name": "Draw",
+                "price": 3.8
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 1.95
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 4.02
+              },
+              {
+                "name": "Draw",
+                "price": 3.43
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Borussia Monchengladbach",
+                "price": 1.96,
+                "point": -0.5
+              },
+              {
+                "name": "FC St. Pauli",
+                "price": 1.88,
+                "point": 0.5
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.84,
+                "point": 2.25
+              },
+              {
+                "name": "Under",
+                "price": 2.0,
+                "point": 2.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bde011cff04e24f928df2c6266f1c920",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-14T14:30:00Z",
+    "home_team": "Eintracht Frankfurt",
+    "away_team": "1. FC Heidenheim",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.8
+              },
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.53
+              },
+              {
+                "name": "Draw",
+                "price": 4.5
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 6.8
+              },
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.63
+              },
+              {
+                "name": "Draw",
+                "price": 5.2
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 5.51
+              },
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.53
+              },
+              {
+                "name": "Draw",
+                "price": 4.52
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "1. FC Heidenheim",
+                "price": 1.96,
+                "point": 1.0
+              },
+              {
+                "name": "Eintracht Frankfurt",
+                "price": 1.88,
+                "point": -1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.94,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 1.89,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cd1f4990172de08522ec54068cac55dd",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-14T14:30:00Z",
+    "home_team": "Borussia Dortmund",
+    "away_team": "Augsburg",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 7.4
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.41
+              },
+              {
+                "name": "Draw",
+                "price": 4.5
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 10.0
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.54
+              },
+              {
+                "name": "Draw",
+                "price": 6.6
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 6.81
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.41
+              },
+              {
+                "name": "Draw",
+                "price": 4.95
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Augsburg",
+                "price": 1.97,
+                "point": 1.25
+              },
+              {
+                "name": "Borussia Dortmund",
+                "price": 1.88,
+                "point": -1.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.88,
+                "point": 3.0
+              },
+              {
+                "name": "Under",
+                "price": 1.95,
+                "point": 3.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "0e5ee3ef51b0e910ac994237f8f23d81",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-14T14:30:00Z",
+    "home_team": "Bayer Leverkusen",
+    "away_team": "Bayern Munich",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 3.95
+              },
+              {
+                "name": "Bayern Munich",
+                "price": 1.54
+              },
+              {
+                "name": "Draw",
+                "price": 3.95
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 6.0
+              },
+              {
+                "name": "Bayern Munich",
+                "price": 1.73
+              },
+              {
+                "name": "Draw",
+                "price": 1000.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 4.6
+              },
+              {
+                "name": "Bayern Munich",
+                "price": 1.61
+              },
+              {
+                "name": "Draw",
+                "price": 4.61
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Bayer Leverkusen",
+                "price": 1.86,
+                "point": 1.0
+              },
+              {
+                "name": "Bayern Munich",
+                "price": 1.99,
+                "point": -1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 2.01,
+                "point": 3.5
+              },
+              {
+                "name": "Under",
+                "price": 1.83,
+                "point": 3.5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "34cf04a07cd90d492706174988646aa8",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-14T14:30:00Z",
+    "home_team": "TSG Hoffenheim",
+    "away_team": "VfL Wolfsburg",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.52
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 5.7
+              },
+              {
+                "name": "Draw",
+                "price": 4.7
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.62
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 6.6
+              },
+              {
+                "name": "Draw",
+                "price": 5.4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.51
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 5.55
+              },
+              {
+                "name": "Draw",
+                "price": 4.71
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "TSG Hoffenheim",
+                "price": 1.81,
+                "point": -1.0
+              },
+              {
+                "name": "VfL Wolfsburg",
+                "price": 2.06,
+                "point": 1.0
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:07Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.94,
+                "point": 3.25
+              },
+              {
+                "name": "Under",
+                "price": 1.89,
+                "point": 3.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cb2fae95599db71fb7acda3643c65105",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-14T17:30:00Z",
+    "home_team": "Hamburger SV",
+    "away_team": "1. FC K\u00f6ln",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 3.2
+              },
+              {
+                "name": "Hamburger SV",
+                "price": 2.12
+              },
+              {
+                "name": "Draw",
+                "price": 3.25
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 4.1
+              },
+              {
+                "name": "Hamburger SV",
+                "price": 2.52
+              },
+              {
+                "name": "Draw",
+                "price": 4.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 3.38
+              },
+              {
+                "name": "Hamburger SV",
+                "price": 2.1
+              },
+              {
+                "name": "Draw",
+                "price": 3.58
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "1. FC K\u00f6ln",
+                "price": 2.03,
+                "point": 0.25
+              },
+              {
+                "name": "Hamburger SV",
+                "price": 1.83,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.99,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.85,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "16f91394e11641dd9c0f72c8e0419e1f",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-15T14:30:00Z",
+    "home_team": "Werder Bremen",
+    "away_team": "FSV Mainz 05",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 2.88
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 2.28
+              },
+              {
+                "name": "Draw",
+                "price": 3.2
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 3.6
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 2.78
+              },
+              {
+                "name": "Draw",
+                "price": 4.4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 2.94
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 2.34
+              },
+              {
+                "name": "Draw",
+                "price": 3.53
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "FSV Mainz 05",
+                "price": 1.82,
+                "point": 0.25
+              },
+              {
+                "name": "Werder Bremen",
+                "price": 2.04,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.97,
+                "point": 2.75
+              },
+              {
+                "name": "Under",
+                "price": 1.87,
+                "point": 2.75
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "2848770d3fa2e8b2d84827eb75535311",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-15T16:30:00Z",
+    "home_team": "SC Freiburg",
+    "away_team": "Union Berlin",
+    "bookmakers": [
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "SC Freiburg",
+                "price": 2.14
+              },
+              {
+                "name": "Union Berlin",
+                "price": 3.5
+              },
+              {
+                "name": "Draw",
+                "price": 2.84
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "SC Freiburg",
+                "price": 2.64
+              },
+              {
+                "name": "Union Berlin",
+                "price": 4.6
+              },
+              {
+                "name": "Draw",
+                "price": 4.1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "SC Freiburg",
+                "price": 2.16
+              },
+              {
+                "name": "Union Berlin",
+                "price": 3.48
+              },
+              {
+                "name": "Draw",
+                "price": 3.32
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "SC Freiburg",
+                "price": 1.86,
+                "point": -0.25
+              },
+              {
+                "name": "Union Berlin",
+                "price": 1.99,
+                "point": 0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.9,
+                "point": 2.25
+              },
+              {
+                "name": "Under",
+                "price": 1.93,
+                "point": 2.25
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "7a6c7a7a701d8afe374576614c3a26bd",
+    "sport_key": "soccer_germany_bundesliga",
+    "sport_title": "Bundesliga - Germany",
+    "commence_time": "2026-03-15T18:30:00Z",
+    "home_team": "VfB Stuttgart",
+    "away_team": "RB Leipzig",
+    "bookmakers": [
+      {
+        "key": "pinnacle",
+        "title": "Pinnacle",
+        "last_update": "2026-03-06T00:10:08Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "RB Leipzig",
+                "price": 2.73
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.35
+              },
+              {
+                "name": "Draw",
+                "price": 3.89
+              }
+            ]
+          },
+          {
+            "key": "spreads",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "RB Leipzig",
+                "price": 1.79,
+                "point": 0.25
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.07,
+                "point": -0.25
+              }
+            ]
+          },
+          {
+            "key": "totals",
+            "last_update": "2026-03-06T00:10:08Z",
+            "outcomes": [
+              {
+                "name": "Over",
+                "price": 1.98,
+                "point": 3.5
+              },
+              {
+                "name": "Under",
+                "price": 1.85,
+                "point": 3.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "betfair_ex_eu",
+        "title": "Betfair",
+        "last_update": "2026-03-06T00:09:52Z",
+        "markets": [
+          {
+            "key": "h2h",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "RB Leipzig",
+                "price": 2.92
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.28
+              },
+              {
+                "name": "Draw",
+                "price": 3.65
+              }
+            ]
+          },
+          {
+            "key": "h2h_lay",
+            "last_update": "2026-03-06T00:09:52Z",
+            "outcomes": [
+              {
+                "name": "RB Leipzig",
+                "price": 3.05
+              },
+              {
+                "name": "VfB Stuttgart",
+                "price": 2.62
+              },
+              {
+                "name": "Draw",
+                "price": 4.6
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
