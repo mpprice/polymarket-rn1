@@ -269,9 +269,10 @@ def generate():
     add_body(doc, (
         "Prediction markets exhibit the well-documented FLB: longshots are overpriced "
         "relative to their true probability, and favourites are underpriced. On Polymarket, "
-        "this manifests as tokens priced 5-40c trading above fair value. "
-        "RN1 (the reference trader, +$20.35M verified P&L) concentrated 80%+ of volume "
-        "in the 5-40c range, confirming this is where mispricing is largest."
+        "this manifests as tokens across the full price range trading above or below fair value. "
+        "RN1 (the reference trader, +$20.35M verified P&L over 1.1M trades) trades the full "
+        "0-100c range (median entry 0.48), suggesting mispricing exists at all price levels, "
+        "not just in longshots."
     ))
 
     add_heading(doc, "2.3 Information Propagation Delay", level=2)
@@ -375,10 +376,11 @@ def generate():
     add_body(doc, "where p = fair probability, q = 1-p. This maximises the expected geometric growth rate:")
     add_formula(doc, "G(f) = p * log(1 + f*b) + q * log(1 - f)")
 
-    add_heading(doc, "5.2 Quarter-Kelly Rationale", level=2)
+    add_heading(doc, "5.2 Fractional Kelly Rationale", level=2)
     add_body(doc, (
         "Full Kelly is optimal only with perfect probability estimates and infinite horizon. "
-        "In practice, estimation error makes it dangerously aggressive."
+        "In practice, estimation error makes it dangerously aggressive. We use 15% Kelly "
+        "(f = 0.15 * f*) during the paper trading / statistical learning phase."
     ))
     add_table(doc,
         ["Kelly Fraction", "Growth Captured", "Variance Captured", "Ruin Probability"],
@@ -386,12 +388,14 @@ def generate():
             ["Full (1.00)", "100%", "100%", "Material"],
             ["Half (0.50)", "75%", "50%", "Low"],
             ["Quarter (0.25)", "56%", "25%", "Negligible"],
+            ["15% (0.15) [current]", "~40%", "~15%", "Near zero"],
         ],
         col_aligns=["left", "center", "center", "center"],
     )
     add_body(doc, (
-        "Quarter-Kelly sacrifices 44% of theoretical growth but reduces variance by 75%, "
-        "providing a smooth equity curve and negligible risk of ruin."
+        "At 15% Kelly, position sizes are very small ($0.50-$8.00) which prioritises "
+        "maximising trade count for statistical learning over capital growth. Once edge is "
+        "confirmed (M2 milestone, n>=100), Kelly fraction can be increased to 0.25."
     ))
 
     add_heading(doc, "5.3 Estimation-Error Adjustment (Thorp 2006)", level=2)
@@ -487,7 +491,7 @@ def generate():
     add_body(doc, (
         "The following metrics define the scorecard against which live agent trading "
         "performance should be evaluated. Thresholds are calibrated for a $500 test wallet "
-        "with quarter-Kelly sizing."
+        "with 15% fractional Kelly sizing."
     ))
 
     add_heading(doc, "9.1 Primary Metrics (Must-Pass)", level=2)
@@ -516,8 +520,8 @@ def generate():
             ["Max Drawdown", "< 15% bankroll", "25% ($125)", "Halt, review"],
             ["Drawdown Duration", "< 14 days", "30 days", "Reduce sizes 50%"],
             ["Daily Loss Limit", "> -$25", "-$50", "Halt for day"],
-            ["Exposure / Bankroll", "< 60%", "80%", "No new positions"],
-            ["Single Position / Bankroll", "< 5%", "10%", "Reject trade"],
+            ["Exposure / Bankroll", "< 80%", "90%", "No new positions"],
+            ["Single Position / Bankroll", "< 1.6% ($8)", "3% ($15)", "Reject trade"],
             ["Contradictory Positions", "0", "0", "Immediate investigation"],
         ],
         col_aligns=["left", "center", "center", "left"],
@@ -583,7 +587,7 @@ def generate():
         ["Edge Source", "Mechanism", "Magnitude", "Persistence"],
         [
             ["Sharp-book mispricing", "Polymarket lags Pinnacle 30-180s", "3-15%", "High (structural)"],
-            ["Favourite-longshot bias", "Longshots overpriced in prediction mkts", "5-25% at 5-20c", "High (behavioural)"],
+            ["Favourite-longshot bias", "Longshots overpriced in prediction mkts", "3-20%", "High (behavioural)"],
             ["Merge arbitrage", "YES+NO < $1.00, fragmented liquidity", "1-5%", "High (structural)"],
             ["TAKER delay exploitation", "3s delay prevents rapid correction", "2-8%", "High (protocol)"],
             ["Information asymmetry", "Sharp books price news faster", "Variable", "Medium (competition)"],
@@ -718,7 +722,7 @@ def generate():
     )
 
     add_heading(doc, "12.4 Next Steps", level=2)
-    add_bullet(doc, " Wait for event resolutions (88 open positions)", bold_prefix="Immediate:")
+    add_bullet(doc, " Wait for event resolutions (87 open positions)", bold_prefix="Immediate:")
     add_bullet(doc, " Validate CLV, win rate vs expected, Brier score at n=30+", bold_prefix="M1 (30 trades):")
     add_bullet(doc, " Binomial + t-test significance at n=100", bold_prefix="M2 (100 trades):")
     add_bullet(doc, " If CLV > +2% and flat-bet ROI > +3%, transition to live ($100 wallet)", bold_prefix="Live decision:")
