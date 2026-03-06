@@ -50,7 +50,7 @@ class PolymarketClient:
 
     # ── Market Discovery (Gamma API) ────────────────────────────────
 
-    def get_active_sports_markets(self, limit: int = 100) -> list[dict]:
+    def get_active_sports_markets(self, limit: int = 200) -> list[dict]:
         """Fetch active sports markets from Gamma API using sport tag IDs."""
         # First fetch sport tag mappings
         tag_map = self._get_sport_tags()

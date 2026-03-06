@@ -34,18 +34,123 @@ from flask import Flask, jsonify, Response, request
 app = Flask(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+
+# Mode-specific configuration
+MODE_CONFIG = {
+    "paper": {
+        "data_dir": BASE_DIR / "data" / "paper",
+        "log_file": BASE_DIR / "bot_paper.log",
+        "starting_capital": 500.0,
+        "label": "Paper Trading",
+    },
+    "live": {
+        "data_dir": BASE_DIR / "data" / "live",
+        "log_file": BASE_DIR / "bot_live.log",
+        "starting_capital": 100.0,
+        "label": "LIVE Trading",
+    },
+}
+
+# Ensure mode-specific data directories exist
+(BASE_DIR / "data" / "paper").mkdir(parents=True, exist_ok=True)
+(BASE_DIR / "data" / "live").mkdir(parents=True, exist_ok=True)
+
+
+def _get_mode() -> str:
+    return request.args.get("mode", "paper").lower()
+
+
+def _mode_paths() -> tuple:
+    """Return (data_dir, log_file, starting_capital) for current request mode."""
+    mode = _get_mode()
+    cfg = MODE_CONFIG.get(mode, MODE_CONFIG["paper"])
+    return cfg["data_dir"], cfg["log_file"], cfg["starting_capital"]
+
+
+# Mutable globals — updated per-request by before_request hook
+DATA_DIR = MODE_CONFIG["paper"]["data_dir"]
 POSITIONS_FILE = DATA_DIR / "my_positions.csv"
 TRADES_FILE = DATA_DIR / "my_trades.csv"
 LEARNING_FILE = DATA_DIR / "learning_history.json"
-LOG_FILE = BASE_DIR / "bot.log"
+LOG_FILE = MODE_CONFIG["paper"]["log_file"]
+STARTING_CAPITAL = 500.0
 
-STARTING_CAPITAL = 500.0  # $500 test wallet
+
+@app.before_request
+def _set_mode_globals():
+    """Set global path variables based on ?mode= query parameter."""
+    global DATA_DIR, POSITIONS_FILE, TRADES_FILE, LEARNING_FILE, LOG_FILE, STARTING_CAPITAL
+    ctx = _ctx()
+    DATA_DIR = ctx["data_dir"]
+    POSITIONS_FILE = ctx["positions_file"]
+    TRADES_FILE = ctx["trades_file"]
+    LEARNING_FILE = ctx["learning_file"]
+    LOG_FILE = ctx["log_file"]
+    STARTING_CAPITAL = ctx["starting_capital"]
+
+
+# ---------------------------------------------------------------------------
+# Live price cache (midpoints from Polymarket CLOB)
+# ---------------------------------------------------------------------------
+
+_price_cache: dict[str, float] = {}
+_price_cache_ts: float = 0.0
+PRICE_CACHE_TTL = 60  # seconds
+
+
+def _fetch_midpoints(token_ids: list[str]) -> dict[str, float]:
+    """Fetch current midpoint prices from Polymarket CLOB API.
+
+    Uses a simple per-token endpoint; results are cached for 60s.
+    """
+    global _price_cache, _price_cache_ts
+    import requests as _req
+
+    now = time.time()
+    if now - _price_cache_ts < PRICE_CACHE_TTL and all(t in _price_cache for t in token_ids):
+        return {t: _price_cache[t] for t in token_ids}
+
+    results = {}
+    for tid in token_ids:
+        if tid in _price_cache and now - _price_cache_ts < PRICE_CACHE_TTL:
+            results[tid] = _price_cache[tid]
+            continue
+        try:
+            resp = _req.get(
+                "https://clob.polymarket.com/midpoint",
+                params={"token_id": tid},
+                timeout=5,
+            )
+            if resp.ok:
+                data = resp.json()
+                mid = float(data.get("mid", 0))
+                if mid > 0:
+                    results[tid] = mid
+                    _price_cache[tid] = mid
+        except Exception:
+            pass
+
+    _price_cache_ts = now
+    return results
 
 
 # ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
+
+def _ctx():
+    """Return mode-specific paths and config for the current request."""
+    data_dir, log_file, capital = _mode_paths()
+    return {
+        "data_dir": data_dir,
+        "positions_file": data_dir / "my_positions.csv",
+        "trades_file": data_dir / "my_trades.csv",
+        "learning_file": data_dir / "learning_history.json",
+        "log_file": log_file,
+        "starting_capital": capital,
+        "mode": _get_mode(),
+    }
+
 
 def _read_csv(path: Path) -> list[dict]:
     """Read a CSV file and return a list of dicts. Returns [] if missing.
@@ -216,6 +321,8 @@ def api_summary():
         "total_trades": total_trades,
         "best_trade": round(best_trade_pnl, 2),
         "starting_capital": STARTING_CAPITAL,
+        "mode": _get_mode(),
+        "mode_label": MODE_CONFIG.get(_get_mode(), {}).get("label", "Paper Trading"),
         "utc_now": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     })
 
@@ -249,8 +356,46 @@ def api_positions():
         cost = _safe_float(p.get("cost_usdc"))
         p["expected_payout"] = round(shares, 2)
         p["expected_profit"] = round(shares - cost, 2)
+        # Days left until event
+        p["days_left"] = _days_left(p.get("slug", ""))
+
+    # Fetch live midpoint prices for MTM
+    token_ids = [p.get("token_id", "") for p in open_pos if p.get("token_id")]
+    midpoints = _fetch_midpoints(token_ids) if token_ids else {}
+
+    total_mtm_pnl = 0.0
+    total_mtm_value = 0.0
+    total_cost = 0.0
+    for p in open_pos:
+        tid = p.get("token_id", "")
+        shares = _safe_float(p.get("shares"))
+        cost = _safe_float(p.get("cost_usdc"))
+        mid = midpoints.get(tid)
+        if mid is not None:
+            mtm_value = shares * mid
+            mtm_pnl = mtm_value - cost
+            p["current_price"] = round(mid, 4)
+            p["mtm_value"] = round(mtm_value, 2)
+            p["mtm_pnl"] = round(mtm_pnl, 2)
+            total_mtm_pnl += mtm_pnl
+            total_mtm_value += mtm_value
+        else:
+            p["current_price"] = None
+            p["mtm_value"] = None
+            p["mtm_pnl"] = None
+        total_cost += cost
+
     open_pos.sort(key=lambda p: _safe_float(p.get("cost_usdc")), reverse=True)
-    return jsonify(open_pos)
+    return jsonify({
+        "positions": open_pos,
+        "mtm_summary": {
+            "total_cost": round(total_cost, 2),
+            "total_mtm_value": round(total_mtm_value, 2),
+            "total_mtm_pnl": round(total_mtm_pnl, 2),
+            "priced_count": sum(1 for p in open_pos if p.get("current_price") is not None),
+            "total_count": len(open_pos),
+        },
+    })
 
 
 @app.route("/api/resolved")
@@ -612,54 +757,97 @@ def api_stats():
     })
 
 
+def _extract_event_date(slug: str):
+    """Extract event date from slug like 'lal-bar-sev-2026-03-15-spread-home-2pt5'."""
+    import re
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', slug)
+    if m:
+        try:
+            return datetime.strptime(m.group(1), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return None
+
+
+def _days_left(slug: str) -> float | None:
+    """Return days until event resolves, or None if unknown."""
+    event_dt = _extract_event_date(slug)
+    if event_dt is None:
+        return None
+    delta = (event_dt - datetime.now(timezone.utc)).total_seconds() / 86400
+    return round(max(delta, 0), 1)
+
+
 @app.route("/api/activity")
 def api_activity():
-    """Recent activity feed from trades CSV."""
-    trades = _read_csv(TRADES_FILE)
-    if not trades:
-        return jsonify([])
+    """Recent activity feed — separate opened and resolved sections with detail."""
+    positions = _read_csv(POSITIONS_FILE)
 
-    # Sort by timestamp descending, take last 30
-    trades.sort(key=lambda t: t.get("timestamp", ""), reverse=True)
-    recent = trades[:30]
+    # Recently opened (sorted by opened_at desc)
+    open_pos = [p for p in positions if p.get("status", "").lower() == "open"]
+    open_pos.sort(key=lambda p: p.get("opened_at", ""), reverse=True)
 
-    feed = []
-    for t in recent:
-        trade_type = t.get("type", "UNKNOWN")
-        slug = t.get("slug", "")
-        outcome = t.get("outcome", "")
-        sport = t.get("sport", "")
-        entry = _safe_float(t.get("entry_price"))
-        cost = _safe_float(t.get("cost_usdc"))
-        pnl = _safe_float(t.get("pnl"))
-        status = t.get("status", "")
-        timestamp = t.get("timestamp", "")
+    # Fetch midpoints for MTM on open positions
+    token_ids = [p.get("token_id", "") for p in open_pos[:20] if p.get("token_id")]
+    midpoints = _fetch_midpoints(token_ids) if token_ids else {}
 
-        if trade_type == "OPEN":
-            desc = f"Opened: {sport.upper()} {slug} [{outcome}] @ {entry:.3f} (${cost:.2f})"
-            icon = "open"
-        elif trade_type in ("WON", "LOST", "RESOLVED"):
-            won = trade_type == "WON" or status.lower() == "won"
-            result = "WON" if won else "LOST"
-            desc = f"Resolved: {sport.upper()} {slug} [{outcome}] {result} {'+' if pnl >= 0 else ''}{pnl:.2f}"
-            icon = "won" if won else "lost"
-        elif trade_type == "MERGE":
-            desc = f"Merge: {slug} merged for ${pnl:.2f} profit"
-            icon = "merge"
-        else:
-            desc = f"{trade_type}: {slug} [{outcome}]"
-            icon = "other"
-
-        feed.append({
-            "timestamp": timestamp,
-            "type": icon,
-            "description": desc,
-            "pnl": round(pnl, 2),
+    opened = []
+    for p in open_pos[:20]:
+        slug = p.get("slug", "")
+        days = _days_left(slug)
+        tid = p.get("token_id", "")
+        shares = _safe_float(p.get("shares"))
+        cost = _safe_float(p.get("cost_usdc"))
+        mid = midpoints.get(tid)
+        mtm_pnl = round(shares * mid - cost, 2) if mid else None
+        opened.append({
             "slug": slug,
+            "outcome": p.get("outcome", ""),
+            "sport": p.get("sport", "").upper(),
+            "market_type": p.get("market_type", ""),
+            "entry_price": _safe_float(p.get("entry_price")),
+            "fair_prob": _safe_float(p.get("fair_prob")),
+            "edge_pct": round(_safe_float(p.get("edge_pct")), 1),
+            "shares": round(shares, 1),
+            "cost_usdc": round(cost, 2),
+            "current_price": round(mid, 4) if mid else None,
+            "mtm_pnl": mtm_pnl,
+            "bookmaker": p.get("bookmaker", ""),
+            "opened_at": p.get("opened_at", ""),
+            "days_left": days,
             "url": _polymarket_url(slug),
         })
 
-    return jsonify(feed)
+    # Recently resolved (sorted by closed_at desc)
+    resolved_pos = [p for p in positions if p.get("status", "").lower() in ("won", "lost")]
+    resolved_pos.sort(key=lambda p: p.get("closed_at", ""), reverse=True)
+
+    resolved = []
+    for p in resolved_pos[:20]:
+        slug = p.get("slug", "")
+        won = p.get("status", "").lower() == "won"
+        pnl = _safe_float(p.get("pnl"))
+        entry = _safe_float(p.get("entry_price"))
+        shares = _safe_float(p.get("shares"))
+        payout = _safe_float(p.get("payout"))
+        resolved.append({
+            "slug": slug,
+            "outcome": p.get("outcome", ""),
+            "sport": p.get("sport", "").upper(),
+            "market_type": p.get("market_type", ""),
+            "entry_price": entry,
+            "edge_pct": round(_safe_float(p.get("edge_pct")), 1),
+            "shares": round(shares, 1),
+            "cost_usdc": round(_safe_float(p.get("cost_usdc")), 2),
+            "pnl": round(pnl, 2),
+            "payout": round(payout, 2),
+            "won": won,
+            "closed_at": p.get("closed_at", ""),
+            "opened_at": p.get("opened_at", ""),
+            "url": _polymarket_url(slug),
+        })
+
+    return jsonify({"opened": opened, "resolved": resolved})
 
 
 @app.route("/api/edge_distribution")
@@ -777,8 +965,7 @@ def api_rn1():
 # RN1 Live Activity API
 # ---------------------------------------------------------------------------
 
-RN1_LIVE_SUMMARY = DATA_DIR / "rn1_live_summary.json"
-RN1_LIVE_TRADES = DATA_DIR / "rn1_live_trades.json"
+# RN1 live files are resolved per-request via DATA_DIR global
 
 
 def _read_json_file(path: Path) -> dict | list | None:
@@ -799,8 +986,10 @@ def api_rn1_live():
     Returns active market count, hot markets, and last 15 activity events.
     Activity events show type/slug/timestamp only — NOT trade details we'd copy.
     """
-    summary = _read_json_file(RN1_LIVE_SUMMARY)
-    trades_raw = _read_json_file(RN1_LIVE_TRADES)
+    rn1_summary_file = DATA_DIR / "rn1_live_summary.json"
+    rn1_trades_file = DATA_DIR / "rn1_live_trades.json"
+    summary = _read_json_file(rn1_summary_file)
+    trades_raw = _read_json_file(rn1_trades_file)
 
     if summary is None:
         summary = {
@@ -836,12 +1025,12 @@ def api_rn1_live():
             last = _dt.fromisoformat(summary["last_poll"].replace("Z", "+00:00"))
             age = (datetime.now(timezone) - last).total_seconds() if hasattr(timezone, '__call__') else 999
             # Simpler: check file mtime
-            if RN1_LIVE_SUMMARY.exists():
-                age = time.time() - os.path.getmtime(RN1_LIVE_SUMMARY)
+            if rn1_summary_file.exists():
+                age = time.time() - os.path.getmtime(rn1_summary_file)
                 tracker_alive = age < 120
         except Exception:
-            if RN1_LIVE_SUMMARY.exists():
-                tracker_alive = (time.time() - os.path.getmtime(RN1_LIVE_SUMMARY)) < 120
+            if rn1_summary_file.exists():
+                tracker_alive = (time.time() - os.path.getmtime(rn1_summary_file)) < 120
 
     # Check which of our open positions overlap with RN1 active markets
     rn1_active_set = set(summary.get("active_markets", []))
@@ -927,6 +1116,26 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
   }
   .badge-paper { background: var(--yellow); color: #1a1a2e; }
+  .badge-live { background: var(--green); color: #1a1a2e; }
+
+  /* Mode Switcher */
+  .mode-switcher {
+    display: flex; border-radius: 6px; overflow: hidden; border: 1px solid #444;
+  }
+  .mode-switcher button {
+    padding: 6px 16px; border: none; cursor: pointer; font-size: 12px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    background: #2a2a3e; color: #888; transition: all 0.2s;
+  }
+  .mode-switcher button.active-paper {
+    background: var(--yellow); color: #1a1a2e;
+  }
+  .mode-switcher button.active-live {
+    background: var(--green); color: #1a1a2e;
+  }
+  .mode-switcher button:hover:not(.active-paper):not(.active-live) {
+    background: #3a3a4e; color: #ccc;
+  }
 
   /* Traffic Light System */
   .traffic-lights {
@@ -1163,6 +1372,11 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <h1><span>&#9670;</span> Everest Agentic AI Trader <span>|</span> Dashboard</h1>
   </div>
   <div class="header-right">
+    <!-- Mode Switcher -->
+    <div class="mode-switcher">
+      <button id="btn-paper" onclick="switchMode('paper')">Paper</button>
+      <button id="btn-live" onclick="switchMode('live')">Live</button>
+    </div>
     <!-- Traffic Light System -->
     <div class="traffic-lights">
       <div class="tl-item" id="tl-bot" title="Bot Status">
@@ -1192,12 +1406,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
   <div class="cards" id="summary-cards">
     <div class="card">
       <div class="card-label">Total P&amp;L</div>
-      <div class="card-value" id="card-pnl">$0.00</div>
+      <div class="card-value" id="card-pnl">--</div>
       <div class="card-sub" id="card-wl"></div>
     </div>
     <div class="card">
       <div class="card-label">Win Rate</div>
-      <div class="card-value" id="card-wr">0%</div>
+      <div class="card-value" id="card-wr">--</div>
     </div>
     <div class="card">
       <div class="card-label">Sharpe Ratio</div>
@@ -1210,7 +1424,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     </div>
     <div class="card">
       <div class="card-label">Exposure</div>
-      <div class="card-value" id="card-exposure">$0</div>
+      <div class="card-value" id="card-exposure">--</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Unrealized P&amp;L</div>
+      <div class="card-value" id="card-mtm">--</div>
+      <div class="card-sub" id="card-mtm-sub"></div>
     </div>
     <div class="card">
       <div class="card-label">Total Trades</div>
@@ -1218,12 +1437,12 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     </div>
     <div class="card">
       <div class="card-label">Max Drawdown</div>
-      <div class="card-value pnl-neg" id="card-dd">$0</div>
+      <div class="card-value" id="card-dd">--</div>
       <div class="card-sub" id="card-dd-pct"></div>
     </div>
     <div class="card">
       <div class="card-label">ROI</div>
-      <div class="card-value" id="card-roi">0%</div>
+      <div class="card-value" id="card-roi">--</div>
     </div>
   </div>
 
@@ -1252,11 +1471,11 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
         </div>
         <div class="stat-box">
           <div class="stat-label">Avg Winner</div>
-          <div class="stat-value pnl-pos" id="stat-avg-win">$0</div>
+          <div class="stat-value" id="stat-avg-win">--</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Avg Loser</div>
-          <div class="stat-value pnl-neg" id="stat-avg-loss">$0</div>
+          <div class="stat-value" id="stat-avg-loss">--</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Current Streak</div>
@@ -1268,26 +1487,50 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
         </div>
         <div class="stat-box">
           <div class="stat-label">Best Trade</div>
-          <div class="stat-value pnl-pos" id="stat-best">$0</div>
+          <div class="stat-value" id="stat-best">--</div>
           <div class="stat-sub" id="stat-best-slug"></div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Worst Trade</div>
-          <div class="stat-value pnl-neg" id="stat-worst">$0</div>
+          <div class="stat-value" id="stat-worst">--</div>
           <div class="stat-sub" id="stat-worst-slug"></div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Capital Deployed</div>
-          <div class="stat-value" id="stat-deployed">$0</div>
+          <div class="stat-value" id="stat-deployed">--</div>
         </div>
       </div>
     </div>
 
-    <!-- Activity Feed -->
+    <!-- Recently Opened -->
     <div class="section">
-      <h2>Recent Activity</h2>
-      <div class="activity-feed" id="activity-feed">
-        <div class="empty">No activity yet</div>
+      <h2>Recently Opened <span id="opened-count" style="color:var(--text-muted);font-size:14px;"></span></h2>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="opened-table">
+          <thead><tr>
+            <th>Slug</th><th>Outcome</th><th>Sport</th><th>Type</th>
+            <th>Entry</th><th>Current</th><th>Edge</th><th>Shares</th><th>Cost</th>
+            <th>MTM P&amp;L</th><th>Days Left</th><th>Opened</th>
+          </tr></thead>
+          <tbody id="opened-tbody"></tbody>
+        </table>
+        <div class="empty" id="opened-empty">No open positions yet</div>
+      </div>
+    </div>
+
+    <!-- Recently Resolved -->
+    <div class="section">
+      <h2>Recently Resolved <span id="resolved-count2" style="color:var(--text-muted);font-size:14px;"></span></h2>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="resolved-table2">
+          <thead><tr>
+            <th>Slug</th><th>Outcome</th><th>Sport</th><th>Type</th>
+            <th>Entry</th><th>Edge</th><th>Cost</th>
+            <th>P&amp;L</th><th>Result</th><th>Resolved</th>
+          </tr></thead>
+          <tbody id="resolved-tbody2"></tbody>
+        </table>
+        <div class="empty" id="resolved-empty2">No resolved trades yet</div>
       </div>
     </div>
 
@@ -1366,12 +1609,13 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
               <th onclick="sortTable('open-table',2)">Sport <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th onclick="sortTable('open-table',3)">Type <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th onclick="sortTable('open-table',4)">Entry <span class="sort-arrow">&#9650;&#9660;</span></th>
-              <th onclick="sortTable('open-table',5)">Fair Prob <span class="sort-arrow">&#9650;&#9660;</span></th>
+              <th onclick="sortTable('open-table',5)">Current <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th onclick="sortTable('open-table',6)">Edge% <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th onclick="sortTable('open-table',7)">Shares <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th onclick="sortTable('open-table',8)">Cost <span class="sort-arrow">&#9650;&#9660;</span></th>
-              <th onclick="sortTable('open-table',9)">Exp. Profit <span class="sort-arrow">&#9650;&#9660;</span></th>
-              <th onclick="sortTable('open-table',10)">Time Held <span class="sort-arrow">&#9650;&#9660;</span></th>
+              <th onclick="sortTable('open-table',9)">MTM P&amp;L <span class="sort-arrow">&#9650;&#9660;</span></th>
+              <th onclick="sortTable('open-table',10)">Days Left <span class="sort-arrow">&#9650;&#9660;</span></th>
+              <th onclick="sortTable('open-table',11)">Time Held <span class="sort-arrow">&#9650;&#9660;</span></th>
               <th>Link</th>
             </tr>
           </thead>
@@ -1608,6 +1852,28 @@ function switchTab(name) {
   });
 }
 
+// --- Mode management ---
+let currentMode = new URLSearchParams(window.location.search).get('mode') || 'paper';
+
+function switchMode(mode) {
+  currentMode = mode;
+  // Update URL without reload
+  const url = new URL(window.location);
+  url.searchParams.set('mode', mode);
+  window.history.replaceState({}, '', url);
+  // Update button styling
+  document.getElementById('btn-paper').className = mode === 'paper' ? 'active-paper' : '';
+  document.getElementById('btn-live').className = mode === 'live' ? 'active-live' : '';
+  // Refresh data
+  refreshAll();
+}
+
+// Init mode buttons on load
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-paper').className = currentMode === 'paper' ? 'active-paper' : '';
+  document.getElementById('btn-live').className = currentMode === 'live' ? 'active-live' : '';
+});
+
 // --- Helpers ---
 function fmt$(v) {
   const n = parseFloat(v) || 0;
@@ -1636,8 +1902,10 @@ function relativeTime(t) {
 }
 
 async function fetchJSON(url) {
-  try { const r = await fetch(url); return await r.json(); }
-  catch(e) { console.error('Fetch error:', url, e); return null; }
+  const sep = url.includes('?') ? '&' : '?';
+  const fullUrl = url + sep + 'mode=' + currentMode;
+  try { const r = await fetch(fullUrl); return await r.json(); }
+  catch(e) { console.error('Fetch error:', fullUrl, e); return null; }
 }
 
 // --- Table sorting ---
@@ -1717,18 +1985,18 @@ async function refreshAll() {
       }
     }
 
-    // Trading mode
+    // Trading mode (reflects dashboard view mode)
     const tlModeDot = document.querySelector('#tl-mode .tl-dot');
     const tlModeDetail = document.getElementById('tl-mode-detail');
     if (tlModeDot && tlModeDetail) {
-      if (summary.live_trading) {
+      if (currentMode === 'live') {
         tlModeDot.className = 'tl-dot tl-green';
-        tlModeDetail.textContent = 'LIVE';
+        tlModeDetail.textContent = summary.mode_label || 'LIVE Trading';
         tlModeDetail.style.color = 'var(--green)';
         tlModeDetail.style.fontWeight = '700';
       } else {
         tlModeDot.className = 'tl-dot tl-yellow';
-        tlModeDetail.textContent = 'Paper';
+        tlModeDetail.textContent = summary.mode_label || 'Paper Trading';
         tlModeDetail.style.color = 'var(--yellow)';
         tlModeDetail.style.fontWeight = '600';
       }
@@ -1758,13 +2026,14 @@ async function refreshAll() {
   // === Summary Cards ===
   try {
   if (summary) {
+    const hasTrades = (summary.total_trades || 0) > 0;
     const pnlEl = document.getElementById('card-pnl');
-    pnlEl.textContent = fmt$(summary.total_pnl || 0);
-    pnlEl.className = 'card-value ' + pnlClass(summary.total_pnl || 0);
-    document.getElementById('card-wl').textContent = (summary.wins||0) + 'W / ' + (summary.losses||0) + 'L';
-    document.getElementById('card-wr').textContent = (summary.win_rate||0) + '%';
+    pnlEl.textContent = hasTrades ? fmt$(summary.total_pnl || 0) : '--';
+    pnlEl.className = 'card-value ' + (hasTrades ? pnlClass(summary.total_pnl || 0) : '');
+    document.getElementById('card-wl').textContent = hasTrades ? (summary.wins||0) + 'W / ' + (summary.losses||0) + 'L' : '';
+    document.getElementById('card-wr').textContent = hasTrades ? (summary.win_rate||0) + '%' : '--';
     document.getElementById('card-open').textContent = summary.open_count || 0;
-    document.getElementById('card-exposure').textContent = '$' + (summary.total_exposure||0).toFixed(2);
+    document.getElementById('card-exposure').textContent = hasTrades ? '$' + (summary.total_exposure||0).toFixed(2) : '--';
     document.getElementById('card-trades').textContent = summary.total_trades || 0;
     document.getElementById('utc-time').textContent = summary.utc_now || '';
   }
@@ -1775,20 +2044,22 @@ async function refreshAll() {
   // === Extended Stats ===
   try {
   if (stats) {
+    const hasResolved = stats.total_resolved > 0;
     const sharpeEl = document.getElementById('card-sharpe');
-    sharpeEl.textContent = stats.total_resolved > 0 ? stats.sharpe.toFixed(2) : '--';
-    sharpeEl.className = 'card-value ' + (stats.sharpe >= 0 ? 'pnl-pos' : 'pnl-neg');
+    sharpeEl.textContent = hasResolved ? stats.sharpe.toFixed(2) : '--';
+    sharpeEl.className = 'card-value ' + (hasResolved && stats.sharpe >= 0 ? 'pnl-pos' : hasResolved ? 'pnl-neg' : '');
 
-    document.getElementById('card-dd').textContent = '-$' + stats.max_dd_dollar.toFixed(2);
-    document.getElementById('card-dd-pct').textContent = stats.max_dd_pct.toFixed(1) + '%';
+    document.getElementById('card-dd').textContent = hasResolved ? '-$' + stats.max_dd_dollar.toFixed(2) : '--';
+    document.getElementById('card-dd').className = 'card-value' + (hasResolved ? ' pnl-neg' : '');
+    document.getElementById('card-dd-pct').textContent = hasResolved ? stats.max_dd_pct.toFixed(1) + '%' : '';
 
     const roiEl = document.getElementById('card-roi');
-    roiEl.textContent = stats.roi.toFixed(1) + '%';
-    roiEl.className = 'card-value ' + (stats.roi >= 0 ? 'pnl-pos' : 'pnl-neg');
+    roiEl.textContent = hasResolved ? stats.roi.toFixed(1) + '%' : '--';
+    roiEl.className = 'card-value ' + (hasResolved && stats.roi >= 0 ? 'pnl-pos' : hasResolved ? 'pnl-neg' : '');
 
-    document.getElementById('stat-pf').textContent = stats.profit_factor === 'Inf' ? 'Inf' : stats.profit_factor.toFixed(2);
-    document.getElementById('stat-avg-win').textContent = '+$' + stats.avg_winner.toFixed(2);
-    document.getElementById('stat-avg-loss').textContent = '-$' + Math.abs(stats.avg_loser).toFixed(2);
+    document.getElementById('stat-pf').textContent = hasResolved ? (stats.profit_factor === 'Inf' ? 'Inf' : stats.profit_factor.toFixed(2)) : '--';
+    document.getElementById('stat-avg-win').textContent = hasResolved ? '+$' + stats.avg_winner.toFixed(2) : '--';
+    document.getElementById('stat-avg-loss').textContent = hasResolved ? '-$' + Math.abs(stats.avg_loser).toFixed(2) : '--';
 
     const streakEl = document.getElementById('stat-streak');
     if (stats.current_streak.count > 0) {
@@ -1797,6 +2068,7 @@ async function refreshAll() {
       streakEl.className = 'stat-value ' + (isWin ? 'streak-win' : 'streak-loss');
     } else {
       streakEl.textContent = '--';
+      streakEl.className = 'stat-value';
     }
 
     const holdEl = document.getElementById('stat-hold');
@@ -1806,46 +2078,92 @@ async function refreshAll() {
       else holdEl.textContent = (stats.avg_hold_time_hours / 24).toFixed(1) + 'd';
     } else { holdEl.textContent = '--'; }
 
+    const bestEl = document.getElementById('stat-best');
+    const bestSub = document.getElementById('stat-best-slug');
     if (stats.best_trade) {
-      document.getElementById('stat-best').textContent = fmt$(stats.best_trade.pnl);
-      const bestSub = document.getElementById('stat-best-slug');
+      bestEl.textContent = fmt$(stats.best_trade.pnl);
       bestSub.innerHTML = stats.best_trade.slug ?
         `<a href="${stats.best_trade.url}" target="_blank" class="pm-link">${shortSlug(stats.best_trade.slug)}</a>` : '';
+    } else {
+      bestEl.textContent = '--'; bestEl.className = 'stat-value';
+      bestSub.innerHTML = '';
     }
+    const worstEl = document.getElementById('stat-worst');
+    const worstSub = document.getElementById('stat-worst-slug');
     if (stats.worst_trade) {
-      document.getElementById('stat-worst').textContent = fmt$(stats.worst_trade.pnl);
-      const worstSub = document.getElementById('stat-worst-slug');
+      worstEl.textContent = fmt$(stats.worst_trade.pnl);
       worstSub.innerHTML = stats.worst_trade.slug ?
         `<a href="${stats.worst_trade.url}" target="_blank" class="pm-link">${shortSlug(stats.worst_trade.slug)}</a>` : '';
+    } else {
+      worstEl.textContent = '--'; worstEl.className = 'stat-value';
+      worstSub.innerHTML = '';
     }
-    document.getElementById('stat-deployed').textContent = '$' + (stats.total_capital_deployed||0).toFixed(2);
+    document.getElementById('stat-deployed').textContent = hasResolved ? '$' + (stats.total_capital_deployed||0).toFixed(2) : '--';
   }
   } catch(e) { console.error('Stats section error:', e); }
 
   // === Open Positions ===
   try {
   if (positions) {
+    const posList = positions.positions || [];
+    const mtmSummary = positions.mtm_summary || {};
     const tbody = document.getElementById('open-tbody');
     const empty = document.getElementById('open-empty');
-    document.getElementById('open-count-header').textContent = positions.length;
-    if (positions.length === 0) {
+    document.getElementById('open-count-header').textContent = posList.length;
+
+    // Unrealized P&L card
+    const mtmEl = document.getElementById('card-mtm');
+    const mtmSub = document.getElementById('card-mtm-sub');
+    if (mtmSummary.priced_count > 0) {
+      mtmEl.textContent = fmt$(mtmSummary.total_mtm_pnl);
+      mtmEl.className = 'card-value ' + pnlClass(mtmSummary.total_mtm_pnl);
+      mtmSub.textContent = mtmSummary.priced_count + '/' + mtmSummary.total_count + ' priced | MTM $' + mtmSummary.total_mtm_value.toFixed(0) + ' / cost $' + mtmSummary.total_cost.toFixed(0);
+    } else {
+      mtmEl.textContent = '--';
+      mtmEl.className = 'card-value';
+      mtmSub.textContent = '';
+    }
+
+    if (posList.length === 0) {
       tbody.innerHTML = ''; empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      tbody.innerHTML = positions.map(p => `<tr>
+      // Sum row at top
+      const totShares = posList.reduce((s,p) => s + parseFloat(p.shares||0), 0);
+      const totCost = posList.reduce((s,p) => s + parseFloat(p.cost_usdc||0), 0);
+      const totMtm = posList.reduce((s,p) => s + (p.mtm_pnl !== null && p.mtm_pnl !== undefined ? p.mtm_pnl : 0), 0);
+      const avgEdge = posList.length > 0 ? posList.reduce((s,p) => s + parseFloat(p.edge_pct||0), 0) / posList.length : 0;
+      let html = `<tr style="border-bottom:2px solid var(--green);font-weight:700;background:rgba(0,212,170,0.05);">
+        <td>TOTAL (${posList.length})</td><td></td><td></td><td></td>
+        <td></td><td></td>
+        <td>${avgEdge.toFixed(1)}%</td>
+        <td class="mono">${totShares.toFixed(1)}</td>
+        <td class="mono">$${totCost.toFixed(2)}</td>
+        <td class="${pnlClass(totMtm)}" style="font-weight:700;">${fmt$(totMtm)}</td>
+        <td></td><td></td><td></td>
+      </tr>`;
+      html += posList.map(p => {
+        const hasMtm = p.current_price !== null && p.current_price !== undefined;
+        const mtmStr = hasMtm ? `<span class="${pnlClass(p.mtm_pnl)}" style="font-weight:600;">${fmt$(p.mtm_pnl)}</span>` : '<span style="color:#666;">--</span>';
+        const curPrice = hasMtm ? p.current_price.toFixed(3) : '--';
+        const daysStr = p.days_left !== null && p.days_left !== undefined ? (p.days_left <= 0 ? '<span style="color:var(--green);font-weight:700;">Today</span>' : p.days_left <= 1 ? '<span style="color:var(--yellow);">' + p.days_left + 'd</span>' : p.days_left + 'd') : '?';
+        return `<tr>
         <td class="slug-col" title="${p.slug || ''}"><a href="${p.polymarket_url}" target="_blank">${shortSlug(p.slug)}</a></td>
         <td>${p.outcome || ''}</td>
         <td>${p.sport || ''}</td>
         <td>${p.market_type || ''}</td>
-        <td>${parseFloat(p.entry_price||0).toFixed(3)}</td>
-        <td>${parseFloat(p.fair_prob||0).toFixed(3)}</td>
+        <td class="mono">${parseFloat(p.entry_price||0).toFixed(3)}</td>
+        <td class="mono">${curPrice}</td>
         <td class="${edgeClass(p.edge_pct)}">${parseFloat(p.edge_pct||0).toFixed(1)}%</td>
-        <td>${parseFloat(p.shares||0).toFixed(1)}</td>
-        <td>$${parseFloat(p.cost_usdc||0).toFixed(2)}</td>
-        <td class="pnl-pos">+$${parseFloat(p.expected_profit||0).toFixed(2)}</td>
+        <td class="mono">${parseFloat(p.shares||0).toFixed(1)}</td>
+        <td class="mono">$${parseFloat(p.cost_usdc||0).toFixed(2)}</td>
+        <td>${mtmStr}</td>
+        <td>${daysStr}</td>
         <td>${p.time_held || ''}</td>
         <td><a href="${p.polymarket_url}" target="_blank" class="pm-link">View</a></td>
-      </tr>`).join('');
+      </tr>`;
+      }).join('');
+      tbody.innerHTML = html;
     }
   }
   } catch(e) { console.error('Positions error:', e); }
@@ -1859,7 +2177,24 @@ async function refreshAll() {
       tbody.innerHTML = ''; empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      tbody.innerHTML = resolved.map(p => {
+      // Sum row at top
+      const rShares = resolved.reduce((s,p) => s + parseFloat(p.shares||0), 0);
+      const rCost = resolved.reduce((s,p) => s + parseFloat(p.cost_usdc||0), 0);
+      const rPayout = resolved.reduce((s,p) => s + parseFloat(p.payout||0), 0);
+      const rPnl = resolved.reduce((s,p) => s + parseFloat(p.pnl||0), 0);
+      const rWins = resolved.filter(p => (p.status||'').toLowerCase() === 'won').length;
+      const rLosses = resolved.length - rWins;
+      let rHtml = `<tr style="border-bottom:2px solid var(--green);font-weight:700;background:rgba(0,212,170,0.05);">
+        <td>TOTAL (${resolved.length})</td><td></td><td></td><td></td>
+        <td></td><td></td>
+        <td class="mono">${rShares.toFixed(1)}</td>
+        <td class="mono">$${rCost.toFixed(2)}</td>
+        <td class="mono">$${rPayout.toFixed(2)}</td>
+        <td class="${pnlClass(rPnl)}" style="font-weight:700;">${fmt$(rPnl)}</td>
+        <td>${rWins}W / ${rLosses}L</td>
+        <td></td><td></td>
+      </tr>`;
+      rHtml += resolved.map(p => {
         const cls = p.status && p.status.toLowerCase() === 'won' ? 'row-won' : 'row-lost';
         const pnl = parseFloat(p.pnl||0);
         return `<tr class="${cls}">
@@ -1878,27 +2213,102 @@ async function refreshAll() {
           <td><a href="${p.polymarket_url}" target="_blank" class="pm-link">View</a></td>
         </tr>`;
       }).join('');
+      tbody.innerHTML = rHtml;
     }
   }
   } catch(e) { console.error('Resolved error:', e); }
 
   // === Activity Feed + Charts + Tables ===
   try {
-  if (activity && activity.length > 0) {
-    const feed = document.getElementById('activity-feed');
-    const icons = { open: '&#9654;', won: '&#10003;', lost: '&#10007;', merge: '&#8644;', other: '&#9679;' };
-    feed.innerHTML = activity.map(a => `
-      <div class="activity-item">
-        <div class="activity-icon ${a.type}">${icons[a.type] || icons.other}</div>
-        <div class="activity-body">
-          <div class="activity-desc">${a.description}
-            ${a.slug ? `<a href="${a.url}" target="_blank" class="pm-link" style="margin-left:6px;">View</a>` : ''}
-          </div>
-          <div class="activity-time">${shortTime(a.timestamp)} (${relativeTime(a.timestamp)})</div>
-        </div>
-        ${a.pnl !== 0 ? `<div class="activity-pnl ${pnlClass(a.pnl)}">${fmt$(a.pnl)}</div>` : ''}
-      </div>
-    `).join('');
+  if (activity) {
+    // Recently Opened table
+    const openedList = activity.opened || [];
+    const openedTbody = document.getElementById('opened-tbody');
+    const openedEmpty = document.getElementById('opened-empty');
+    document.getElementById('opened-count').textContent = openedList.length > 0 ? '(' + openedList.length + ')' : '';
+    if (openedList.length > 0) {
+      openedEmpty.style.display = 'none';
+      // Sum row at top
+      const oTotCost = openedList.reduce((s,o) => s + o.cost_usdc, 0);
+      const oTotMtm = openedList.reduce((s,o) => s + (o.mtm_pnl !== null && o.mtm_pnl !== undefined ? o.mtm_pnl : 0), 0);
+      const oAvgEdge = openedList.reduce((s,o) => s + o.edge_pct, 0) / openedList.length;
+      let oHtml = `<tr style="border-bottom:2px solid var(--green);font-weight:700;background:rgba(0,212,170,0.05);">
+        <td>TOTAL (${openedList.length})</td><td></td><td></td><td></td>
+        <td></td><td></td>
+        <td>${oAvgEdge.toFixed(1)}%</td>
+        <td class="mono">${openedList.reduce((s,o) => s + o.shares, 0).toFixed(1)}</td>
+        <td class="mono">$${oTotCost.toFixed(2)}</td>
+        <td class="${pnlClass(oTotMtm)}" style="font-weight:700;">${fmt$(oTotMtm)}</td>
+        <td></td><td></td>
+      </tr>`;
+      oHtml += openedList.map(o => {
+        const daysStr = o.days_left !== null ? (o.days_left <= 0 ? '<span style="color:var(--green);">Today</span>' : o.days_left <= 1 ? '<span style="color:var(--yellow);">' + o.days_left + 'd</span>' : o.days_left + 'd') : '?';
+        const hasMtm = o.current_price !== null && o.current_price !== undefined;
+        const curStr = hasMtm ? o.current_price.toFixed(3) : '--';
+        const mtmStr = hasMtm ? `<span class="${pnlClass(o.mtm_pnl)}" style="font-weight:600;">${fmt$(o.mtm_pnl)}</span>` : '--';
+        return `<tr>
+          <td class="slug-col"><a href="${o.url}" target="_blank" class="pm-link" title="${o.slug}">${shortSlug(o.slug)}</a></td>
+          <td>${o.outcome}</td>
+          <td>${o.sport}</td>
+          <td>${o.market_type}</td>
+          <td class="mono">${o.entry_price.toFixed(3)}</td>
+          <td class="mono">${curStr}</td>
+          <td class="${edgeClass(o.edge_pct)}">${o.edge_pct}%</td>
+          <td class="mono">${o.shares}</td>
+          <td class="mono">$${o.cost_usdc.toFixed(2)}</td>
+          <td>${mtmStr}</td>
+          <td>${daysStr}</td>
+          <td class="mono" style="font-size:11px;">${shortTime(o.opened_at)}</td>
+        </tr>`;
+      }).join('');
+      openedTbody.innerHTML = oHtml;
+    } else {
+      openedEmpty.style.display = 'block';
+      openedTbody.innerHTML = '';
+    }
+
+    // Recently Resolved table
+    const resolvedList = activity.resolved || [];
+    const resolvedTbody2 = document.getElementById('resolved-tbody2');
+    const resolvedEmpty2 = document.getElementById('resolved-empty2');
+    document.getElementById('resolved-count2').textContent = resolvedList.length > 0 ? '(' + resolvedList.length + ')' : '';
+    if (resolvedList.length > 0) {
+      resolvedEmpty2.style.display = 'none';
+      // Sum row at top
+      const r2Cost = resolvedList.reduce((s,r) => s + r.cost_usdc, 0);
+      const r2Pnl = resolvedList.reduce((s,r) => s + r.pnl, 0);
+      const r2Wins = resolvedList.filter(r => r.won).length;
+      const r2Losses = resolvedList.length - r2Wins;
+      let r2Html = `<tr style="border-bottom:2px solid var(--green);font-weight:700;background:rgba(0,212,170,0.05);">
+        <td>TOTAL (${resolvedList.length})</td><td></td><td></td><td></td>
+        <td></td><td></td>
+        <td class="mono">$${r2Cost.toFixed(2)}</td>
+        <td class="${pnlClass(r2Pnl)}" style="font-weight:700;">${fmt$(r2Pnl)}</td>
+        <td>${r2Wins}W / ${r2Losses}L</td>
+        <td></td>
+      </tr>`;
+      r2Html += resolvedList.map(r => {
+        const resultBadge = r.won
+          ? '<span style="color:var(--green);font-weight:700;">WON</span>'
+          : '<span style="color:var(--red);font-weight:700;">LOST</span>';
+        return `<tr>
+          <td class="slug-col"><a href="${r.url}" target="_blank" class="pm-link" title="${r.slug}">${shortSlug(r.slug)}</a></td>
+          <td>${r.outcome}</td>
+          <td>${r.sport}</td>
+          <td>${r.market_type}</td>
+          <td class="mono">${r.entry_price.toFixed(3)}</td>
+          <td class="${edgeClass(r.edge_pct)}">${r.edge_pct}%</td>
+          <td class="mono">$${r.cost_usdc.toFixed(2)}</td>
+          <td class="${pnlClass(r.pnl)} mono" style="font-weight:700;">${fmt$(r.pnl)}</td>
+          <td>${resultBadge}</td>
+          <td class="mono" style="font-size:11px;">${shortTime(r.closed_at)}</td>
+        </tr>`;
+      }).join('');
+      resolvedTbody2.innerHTML = r2Html;
+    } else {
+      resolvedEmpty2.style.display = 'block';
+      resolvedTbody2.innerHTML = '';
+    }
   }
 
   // === Sport Heatmap ===
@@ -2006,6 +2416,9 @@ async function refreshAll() {
     }
   } else {
     document.getElementById('equity-empty').style.display = 'block';
+    equityChart = destroyChart(equityChart);
+    cumPnlChart = destroyChart(cumPnlChart);
+    rollingWrChart = destroyChart(rollingWrChart);
   }
 
   // === Daily PnL ===
@@ -2028,6 +2441,8 @@ async function refreshAll() {
         y: { ...axisDefaults.y, ticks: { ...axisDefaults.y.ticks, callback: v => '$' + v } }
       }}
     });
+  } else {
+    dailyPnlChart = destroyChart(dailyPnlChart);
   }
 
   // === Edge Distribution ===
@@ -2050,6 +2465,8 @@ async function refreshAll() {
         y: { ...axisDefaults.y, beginAtZero: true }
       }}
     });
+  } else {
+    edgeDistChart = destroyChart(edgeDistChart);
   }
 
   // === Calibration Chart ===
@@ -2087,10 +2504,11 @@ async function refreshAll() {
     });
   } else {
     document.getElementById('calibration-empty').style.display = 'block';
+    calibrationChart = destroyChart(calibrationChart);
   }
 
   // === Sports Breakdown (Analytics tab) ===
-  if (sports) {
+  if (sports && sports.length > 0) {
     const tbody = document.getElementById('sport-tbody');
     tbody.innerHTML = sports.map(s => `<tr>
       <td class="slug-col">${s.sport}</td>
@@ -2116,10 +2534,13 @@ async function refreshAll() {
         y: { ...axisDefaults.y, ticks: { ...axisDefaults.y.ticks, callback: v => '$'+v } }
       }}
     });
+  } else {
+    document.getElementById('sport-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#666;">No data yet</td></tr>';
+    sportChart = destroyChart(sportChart);
   }
 
   // === Market Types (Analytics tab) ===
-  if (mtypes) {
+  if (mtypes && mtypes.length > 0) {
     const tbody = document.getElementById('mt-tbody');
     tbody.innerHTML = mtypes.map(m => `<tr>
       <td>${m.market_type}</td>
@@ -2141,6 +2562,9 @@ async function refreshAll() {
         y: { ...axisDefaults.y, ticks: { ...axisDefaults.y.ticks, callback: v => '$'+v } }
       }}
     });
+  } else {
+    document.getElementById('mt-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#666;">No data yet</td></tr>';
+    mtChart = destroyChart(mtChart);
   }
 
   // === Learning Agent ===
@@ -2185,6 +2609,12 @@ async function refreshAll() {
         <td>${s.confident ? '<span style="color:var(--green);">Yes ('+s.total+')</span>' : '<span style="color:var(--text-muted);">No ('+s.total+')</span>'}</td>
       </tr>`).join('');
     }
+  } else {
+    // Clear stale learning data when switching modes
+    const grid = document.getElementById('learning-grid');
+    if (grid) grid.innerHTML = '<div class="learn-stat"><div class="learn-label">No learning data</div><div class="learn-value">--</div></div>';
+    const lsd = document.getElementById('learning-sport-detail');
+    if (lsd) lsd.style.display = 'none';
   }
 
   // === Log ===

@@ -94,8 +94,8 @@ class RiskManager:
             self.config.max_position_usdc,
         )
 
-        # Floor at $2 minimum to be worth the gas
-        if usdc_size < 2.0:
+        # Floor at $0.50 minimum (Polygon gas is negligible)
+        if usdc_size < 0.50:
             return 0.0
 
         return round(usdc_size, 2)

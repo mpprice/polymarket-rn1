@@ -177,6 +177,39 @@ TEAM_ALIASES = {
     "cleveland browns": ["browns", "cle"],
     "washington commanders": ["commanders", "was"],
     "chicago bears": ["bears", "chi"],
+    # NHL (32 teams) — avoid colliding 3-letter abbrevs with NFL/NBA
+    "boston bruins": ["bruins"],
+    "buffalo sabres": ["sabres"],
+    "detroit red wings": ["red wings"],
+    "florida panthers": ["fl panthers"],
+    "montreal canadiens": ["canadiens", "habs", "mtl"],
+    "ottawa senators": ["senators", "ott"],
+    "tampa bay lightning": ["lightning", "tbl"],
+    "toronto maple leafs": ["maple leafs", "leafs"],
+    "carolina hurricanes": ["hurricanes"],
+    "columbus blue jackets": ["blue jackets", "cbj"],
+    "new jersey devils": ["devils", "njd"],
+    "new york islanders": ["islanders", "nyi"],
+    "new york rangers": ["rangers", "nyr"],
+    "philadelphia flyers": ["flyers"],
+    "pittsburgh penguins": ["penguins"],
+    "washington capitals": ["capitals", "caps"],
+    "arizona coyotes": ["coyotes"],
+    "chicago blackhawks": ["blackhawks"],
+    "colorado avalanche": ["avalanche", "avs", "col"],
+    "dallas stars": ["stars"],
+    "minnesota wild": ["wild"],
+    "nashville predators": ["predators", "preds", "nsh"],
+    "st louis blues": ["blues", "stl"],
+    "winnipeg jets": ["wpg jets", "wpg"],
+    "anaheim ducks": ["ducks", "ana"],
+    "calgary flames": ["flames", "cgy"],
+    "edmonton oilers": ["oilers", "edm"],
+    "los angeles kings": ["la kings", "lak"],
+    "san jose sharks": ["sharks", "sjs"],
+    "seattle kraken": ["kraken"],
+    "vancouver canucks": ["canucks", "van"],
+    "vegas golden knights": ["golden knights", "vgk"],
 }
 
 # Build reverse lookup: alias -> canonical
@@ -192,6 +225,96 @@ for canonical, aliases in TEAM_ALIASES.items():
         _ALIAS_TO_CANONICAL[alias_lower] = canonical
         if len(alias) <= 4 and alias.isalpha():
             _ABBREV_TO_CANONICAL[alias_lower] = canonical
+
+# Sport-scoped abbreviation table: (sport, abbrev) -> canonical name
+# Resolves collisions like det=Pistons(NBA)/Lions(NFL)/Red Wings(NHL)
+_SPORT_ABBREV: dict[tuple[str, str], str] = {
+    # NHL — Polymarket uses standard 3-letter codes in slugs
+    ("nhl", "ana"): "anaheim ducks",
+    ("nhl", "ari"): "arizona coyotes",
+    ("nhl", "bos"): "boston bruins",
+    ("nhl", "buf"): "buffalo sabres",
+    ("nhl", "cgy"): "calgary flames",
+    ("nhl", "car"): "carolina hurricanes",
+    ("nhl", "chi"): "chicago blackhawks",
+    ("nhl", "col"): "colorado avalanche",
+    ("nhl", "cbj"): "columbus blue jackets",
+    ("nhl", "dal"): "dallas stars",
+    ("nhl", "det"): "detroit red wings",
+    ("nhl", "edm"): "edmonton oilers",
+    ("nhl", "fla"): "florida panthers",
+    ("nhl", "lak"): "los angeles kings",
+    ("nhl", "min"): "minnesota wild",
+    ("nhl", "mtl"): "montreal canadiens",
+    ("nhl", "nsh"): "nashville predators",
+    ("nhl", "njd"): "new jersey devils",
+    ("nhl", "nyi"): "new york islanders",
+    ("nhl", "nyr"): "new york rangers",
+    ("nhl", "ott"): "ottawa senators",
+    ("nhl", "phi"): "philadelphia flyers",
+    ("nhl", "pit"): "pittsburgh penguins",
+    ("nhl", "sjs"): "san jose sharks",
+    ("nhl", "sea"): "seattle kraken",
+    ("nhl", "stl"): "st louis blues",
+    ("nhl", "tbl"): "tampa bay lightning",
+    ("nhl", "tor"): "toronto maple leafs",
+    ("nhl", "van"): "vancouver canucks",
+    ("nhl", "vgk"): "vegas golden knights",
+    ("nhl", "was"): "washington capitals",
+    ("nhl", "wpg"): "winnipeg jets",
+    # CBB — common abbreviations for March Madness teams
+    ("cbb", "unc"): "north carolina tar heels",
+    ("cbb", "duke"): "duke blue devils",
+    ("cbb", "uk"): "kentucky wildcats",
+    ("cbb", "ku"): "kansas jayhawks",
+    ("cbb", "uconn"): "connecticut huskies",
+    ("cbb", "gon"): "gonzaga bulldogs",
+    ("cbb", "hou"): "houston cougars",
+    ("cbb", "pur"): "purdue boilermakers",
+    ("cbb", "aub"): "auburn tigers",
+    ("cbb", "ten"): "tennessee volunteers",
+    ("cbb", "ala"): "alabama crimson tide",
+    ("cbb", "isu"): "iowa state cyclones",
+    ("cbb", "fla"): "florida gators",
+    ("cbb", "msu"): "michigan state spartans",
+    ("cbb", "tex"): "texas longhorns",
+    ("cbb", "ariz"): "arizona wildcats",
+    ("cbb", "baylor"): "baylor bears",
+    ("cbb", "marq"): "marquette golden eagles",
+    ("cbb", "stj"): "st johns red storm",
+    ("cbb", "wis"): "wisconsin badgers",
+}
+
+
+def _extract_date_from_slug(slug: str) -> Optional[str]:
+    """Extract date from slug like 'atp-shelton-opelka-2026-03-05' -> '2026-03-05T12:00:00Z'.
+
+    Returns ISO string with noon UTC as midpoint estimate, or None if no date found.
+    """
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', slug)
+    if m:
+        return f"{m.group(1)}T12:00:00Z"
+    return None
+
+
+def _tennis_name_match(slug_part: str, surname: str) -> bool:
+    """Match a truncated slug part against a player surname.
+
+    Polymarket truncates to ~7 chars: 'stricke' for 'Stricker', 'shelbay' for 'Shelbayh'.
+    Uses prefix matching (slug is prefix of surname) + fuzzy fallback.
+    """
+    if not slug_part or not surname:
+        return False
+    if slug_part == surname:
+        return True
+    # Prefix match: slug is a truncated prefix of the surname (at least 5 chars)
+    if len(slug_part) >= 5 and surname.startswith(slug_part):
+        return True
+    # Reverse: surname is prefix of slug (rare but possible)
+    if len(surname) >= 5 and slug_part.startswith(surname):
+        return True
+    # Fuzzy with high threshold for short strings
+    return SequenceMatcher(None, slug_part, surname).ratio() >= 0.80
 
 
 def normalize_team(name: str) -> str:
@@ -239,9 +362,13 @@ def classify_market_type(slug: str, question: str) -> str:
     if any(x in q_l for x in ["o/u ", "over/under", "total goals", "total points"]):
         return "total"
 
-    # Exotic markets we skip
+    # Exotic markets we skip (no matching odds data available)
     if any(x in slug_l for x in ["-exact-", "-halftime-", "-more-market",
-                                   "-1h-", "-2h-", "-btts-", "-corners-"]):
+                                   "-1h-", "-2h-", "-btts-", "-corners-",
+                                   "-first-set-", "-set-totals-",
+                                   "-set-handicap-", "-match-total-",
+                                   "-game-handicap-", "-tiebreak-",
+                                   "-aces-", "-double-faults-"]):
         return "exotic"
 
     # Default: h2h (moneyline / match winner)
@@ -315,8 +442,14 @@ def match_markets(
             if not team_match:
                 continue
 
-            # Check date proximity (within 2 days)
-            if not _dates_close(pm.get("end_date", ""), odds_event.get("commence_time", "")):
+            # Check date proximity
+            # For tennis/tournament sports, use slug date (end_date = tournament end, not match)
+            poly_date = pm.get("end_date", "")
+            if sport in ("atp", "wta", "cbb"):
+                slug_date = _extract_date_from_slug(slug)
+                if slug_date:
+                    poly_date = slug_date
+            if not _dates_close(poly_date, odds_event.get("commence_time", "")):
                 continue
 
             # Found a match - calculate edges based on market type
@@ -370,6 +503,17 @@ def _teams_match_strict(pm_teams: list[str], home: str, away: str, sport: str) -
     for pt in pm_teams:
         pt_stripped = pt.strip().lower()
 
+        # 0. Try sport-scoped abbreviation first (resolves collisions)
+        sport_canonical = _SPORT_ABBREV.get((sport, pt_stripped))
+        if sport_canonical:
+            sc_n = normalize_team(sport_canonical)
+            if sc_n == home_n or fuzzy_match(sport_canonical, home, 0.8):
+                matched_home = True
+                continue
+            if sc_n == away_n or fuzzy_match(sport_canonical, away, 0.8):
+                matched_away = True
+                continue
+
         # 1. Try abbreviation lookup (most reliable for slug-based teams)
         canonical = _abbrev_to_canonical(pt_stripped)
         if canonical:
@@ -404,6 +548,23 @@ def _teams_match_strict(pm_teams: list[str], home: str, away: str, sport: str) -
             matched_away = True
             continue
 
+    # Tennis surname matching: slugs like "atp-djokovic-sinner-2026-03-05"
+    # Odds API returns full names like "Novak Djokovic" vs "Jannik Sinner"
+    # Slugs often truncate surnames to ~7 chars: "stricke" for "Stricker", "shelbay" for "Shelbayh"
+    if not (matched_home and matched_away) and sport in ("atp", "wta"):
+        home_surname = home.split()[-1].lower() if home else ""
+        away_surname = away.split()[-1].lower() if away else ""
+        for pt in pm_teams:
+            pt_lower = pt.strip().lower()
+            if not matched_home and home_surname:
+                if (_tennis_name_match(pt_lower, home_surname)):
+                    matched_home = True
+                    continue
+            if not matched_away and away_surname:
+                if (_tennis_name_match(pt_lower, away_surname)):
+                    matched_away = True
+                    continue
+
     # Require BOTH teams matched for reliable pairing
     # Single-team match is too error-prone (e.g., "orl" matches Orlando
     # but the second abbrev matches a different game's team)
@@ -415,7 +576,7 @@ def _teams_match_strict(pm_teams: list[str], home: str, away: str, sport: str) -
     return None
 
 
-def _dates_close(poly_end: str, odds_commence: str, max_hours: int = 48) -> bool:
+def _dates_close(poly_end: str, odds_commence: str, max_hours: int = 96) -> bool:
     """Check if two date strings are within max_hours of each other."""
     try:
         if not poly_end or not odds_commence:

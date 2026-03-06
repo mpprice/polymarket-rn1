@@ -40,6 +40,7 @@ SPORT_KEY_MAP = {
     "nba": "basketball_nba",
     "cbb": "basketball_ncaab",
     "nfl": "americanfootball_nfl",
+    "cfb": "americanfootball_ncaaf",
     "nhl": "icehockey_nhl",
     # Tennis — The Odds API uses tournament-specific keys
     "atp": "tennis_atp_indian_wells",  # rotates by active tournament

@@ -30,6 +30,7 @@ Usage:
 """
 import argparse
 import logging
+import os
 import sys
 
 from src.config import Config
@@ -37,7 +38,7 @@ from src.strategy import Strategy
 from src.position_tracker import PositionTracker
 
 
-def setup_logging(verbose: bool = False):
+def setup_logging(verbose: bool = False, log_file: str = "bot.log"):
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -45,7 +46,7 @@ def setup_logging(verbose: bool = False):
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler("bot.log", mode="a"),
+            logging.FileHandler(log_file, mode="a"),
         ],
     )
 
@@ -109,14 +110,14 @@ def cmd_check(config: Config):
 
 def cmd_report(config: Config):
     """Show portfolio and learning report."""
-    tracker = PositionTracker(config)
+    tracker = PositionTracker(config, data_dir=config.data_dir)
     tracker.print_report()
 
     if config.learning_enabled:
         try:
             from src.learning_agent import LearningAgent
-            agent = LearningAgent()
-            if agent.history:
+            agent = LearningAgent(data_dir=config.data_dir)
+            if agent.trades:
                 print()
                 agent.print_report()
             else:
@@ -129,8 +130,8 @@ def cmd_learning_report(config: Config):
     """Show detailed learning agent report."""
     try:
         from src.learning_agent import LearningAgent
-        agent = LearningAgent()
-        if agent.history:
+        agent = LearningAgent(data_dir=config.data_dir)
+        if agent.trades:
             agent.print_report()
         else:
             print("No learning history yet. Run the bot to accumulate trade data.")
@@ -224,20 +225,22 @@ def cmd_loop(config: Config, args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Polymarket sports arbitrage bot",
+        description="Everest Agentic AI Trader",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_bot.py                    # Single scan (paper trade)
-  python run_bot.py --loop             # Continuous paper trading
-  python run_bot.py --loop --live      # LIVE trading (real money!)
-  python run_bot.py --check            # Verify credentials
-  python run_bot.py --report           # Portfolio report
-  python run_bot.py --learning-report  # Learning agent metrics
+  python run_bot.py                          # Single scan (paper)
+  python run_bot.py --loop                   # Continuous paper trading
+  python run_bot.py --loop --live            # LIVE trading (real money!)
+  python run_bot.py --loop --live --env-file .env.live  # Live with separate config
+  python run_bot.py --check                  # Verify credentials
+  python run_bot.py --report                 # Portfolio report
 """,
     )
     parser.add_argument("--live", action="store_true", help="Enable live trading")
     parser.add_argument("--loop", action="store_true", help="Run continuously")
+    parser.add_argument("--env-file", type=str, default=None,
+                        help="Path to .env file (default: .env)")
     parser.add_argument("--interval", type=int, default=None, help="Scan interval seconds")
     parser.add_argument("--min-edge", type=float, default=None, help="Min edge %% to trade")
     parser.add_argument("--max-price", type=float, default=None, help="Max entry price (0-1)")
@@ -248,8 +251,21 @@ Examples:
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     args = parser.parse_args()
 
-    setup_logging(verbose=args.verbose)
+    # Load env file before Config reads from os.environ
+    if args.env_file:
+        from src.config import load_config_env
+        load_config_env(args.env_file)
+
     config = Config()
+
+    # Determine mode and set data dir
+    mode = "live" if args.live else "paper"
+    if not os.getenv("DATA_DIR"):
+        config.data_dir = f"data/{mode}"
+    os.makedirs(config.data_dir, exist_ok=True)
+
+    log_file = f"bot_{mode}.log"
+    setup_logging(verbose=args.verbose, log_file=log_file)
 
     if args.check:
         cmd_check(config)

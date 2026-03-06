@@ -21,6 +21,7 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import os
 
 from .config import Config
 from .polymarket_client import PolymarketClient
@@ -29,7 +30,7 @@ from .matcher import match_markets
 from .risk_manager import RiskManager
 from .position_tracker import PositionTracker
 
-MAX_DAYS_TO_EVENT = 5  # Only trade events resolving within this many days
+MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
 
 log = logging.getLogger(__name__)
 
@@ -62,8 +63,10 @@ class Strategy:
         self.dry_run = dry_run
         self.poly = PolymarketClient(config, dry_run=dry_run)
         self.odds = OddsClient(config)
+        self.data_dir = config.data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
         self.risk = RiskManager(config)
-        self.tracker = PositionTracker(config)
+        self.tracker = PositionTracker(config, data_dir=self.data_dir)
         self.risk.sync_from_tracker(self.tracker)
 
         # Optional modules
@@ -74,7 +77,7 @@ class Strategy:
         if config.learning_enabled:
             try:
                 from .learning_agent import LearningAgent
-                self._learning = LearningAgent()
+                self._learning = LearningAgent(data_dir=self.data_dir)
                 log.info("Learning agent enabled (%d historical trades)",
                          len(self._learning.trades))
             except Exception as e:
@@ -100,7 +103,7 @@ class Strategy:
         self.min_edge_pct = config.min_edge_pct
         self.max_entry_price = config.max_entry_price
         self.min_entry_price = config.min_entry_price
-        self.min_liquidity = 0.0
+        self.min_liquidity = 100.0  # $100 floor: filter truly illiquid markets only
         self.max_edge_pct = config.max_edge_pct
 
     def scan(self) -> list[Opportunity]:
@@ -122,16 +125,36 @@ class Strategy:
         matched = match_markets(pm_markets, odds_data)
         log.info("Step 3: %d matched market pairs", len(matched))
 
-        # 4. Filter and size opportunities
-        opportunities = []
+        # 4. Filter and size opportunities — track pending exposure so we
+        #    don't blow past the max in a single scan batch
+        self._pending_exposure = 0.0
+        self._filter_counts = {}
+        total_edges = 0
+        candidates = []
         for m in matched:
             for edge in m["edges"]:
+                total_edges += 1
                 opp = self._evaluate_edge(m, edge)
                 if opp:
-                    opportunities.append(opp)
+                    candidates.append(opp)
+        if total_edges > 0:
+            log.info("Edge filter breakdown (%d total, %d passed): %s",
+                     total_edges, len(candidates), self._filter_counts)
 
         # Sort by edge first, then RN1 score as tiebreaker
-        opportunities.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.rn1_score))
+        candidates.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.rn1_score))
+
+        # Second pass: enforce cumulative exposure limit (best edges first)
+        opportunities = []
+        cumulative = self.risk.total_exposure
+        for opp in candidates:
+            if cumulative + opp.size_usdc > self.config.max_total_exposure_usdc:
+                remaining = self.config.max_total_exposure_usdc - cumulative
+                if remaining < 0.50:
+                    break
+                opp.size_usdc = round(remaining, 2)
+            cumulative += opp.size_usdc
+            opportunities.append(opp)
 
         log.info("Step 4: %d directional opportunities", len(opportunities))
         for i, opp in enumerate(opportunities[:15]):
@@ -187,23 +210,29 @@ class Strategy:
         """Evaluate a single edge for tradability."""
         pm = match["polymarket"]
         odds = match["odds_event"]
+        slug = pm.get("slug", "")
 
         # Only buy-side (edge > 0)
         if edge["side"] != "BUY":
+            self._filter_counts["no_buy"] = self._filter_counts.get("no_buy", 0) + 1
             return None
 
         # Edge threshold
         if edge["edge_pct"] < self.min_edge_pct:
+            self._filter_counts["low_edge"] = self._filter_counts.get("low_edge", 0) + 1
             return None
 
         # Cap unrealistic edges (likely matching errors)
         if edge["edge_pct"] > self.max_edge_pct:
+            self._filter_counts["high_edge"] = self._filter_counts.get("high_edge", 0) + 1
             return None
 
         # Price range filter: only buy in profitable range
         if edge["polymarket_price"] > self.max_entry_price:
+            self._filter_counts["price_high"] = self._filter_counts.get("price_high", 0) + 1
             return None
         if edge["polymarket_price"] < self.min_entry_price:
+            self._filter_counts["price_low"] = self._filter_counts.get("price_low", 0) + 1
             return None
 
         # Time-to-resolution filter: skip events more than 5 days out
@@ -213,22 +242,25 @@ class Strategy:
                 ct = datetime.fromisoformat(commence.replace("Z", "+00:00"))
                 hours_out = (ct - datetime.now(timezone.utc)).total_seconds() / 3600
                 if hours_out > MAX_DAYS_TO_EVENT * 24:
+                    self._filter_counts["too_far"] = self._filter_counts.get("too_far", 0) + 1
                     return None
             except (ValueError, TypeError):
                 pass
 
         # Liquidity filter
         if pm.get("liquidity", 0) < self.min_liquidity:
+            self._filter_counts["liquidity"] = self._filter_counts.get("liquidity", 0) + 1
             return None
 
         # Check if already holding this position
         if self.tracker.has_position(edge["token_id"]):
+            self._filter_counts["already_held"] = self._filter_counts.get("already_held", 0) + 1
             return None
 
         # Prevent contradictory positions (both sides of same game/line)
-        slug = pm.get("slug", "")
         outcome = edge.get("outcome", "")
         if slug and self._has_conflicting_position(slug, outcome):
+            self._filter_counts["conflict"] = self._filter_counts.get("conflict", 0) + 1
             return None
 
         # Learning-adjusted edge
@@ -255,9 +287,9 @@ class Strategy:
             kelly_fraction=self.config.kelly_fraction,
         )
         if size <= 0:
+            self._filter_counts["size_zero"] = self._filter_counts.get("size_zero", 0) + 1
             return None
-        if not self.risk.check_can_trade(size):
-            return None
+        # Note: cumulative exposure limit enforced in scan() second pass
 
         # RN1 pattern score
         rn1_score = 0.0
