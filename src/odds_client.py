@@ -29,13 +29,12 @@ SPORT_KEY_MAP = {
     "por": "soccer_portugal_primeira_liga",
     "es2": "soccer_spain_segunda_division",
     "ere": "soccer_netherlands_eredivisie",
-    "scop": "soccer_scotland_premiership",
+    "scop": "soccer_spl",
     "mex": "soccer_mexico_ligamx",
     "arg": "soccer_argentina_primera_division",
     "bra": "soccer_brazil_campeonato",
     "mls": "soccer_usa_mls",
     "tur": "soccer_turkey_super_league",
-    "col": "soccer_colombia_primera_a",
     "spl": "soccer_spain_primera_division",  # alias
     # US sports
     "nba": "basketball_nba",
@@ -43,8 +42,8 @@ SPORT_KEY_MAP = {
     "nfl": "americanfootball_nfl",
     "nhl": "icehockey_nhl",
     # Tennis — The Odds API uses tournament-specific keys
-    "atp": "tennis_atp_aus_open",  # rotates by active tournament
-    "wta": "tennis_wta_aus_open",
+    "atp": "tennis_atp_indian_wells",  # rotates by active tournament
+    "wta": "tennis_wta_indian_wells",
     # Esports — not covered by The Odds API
     # "cs2", "lol", "dota2", "val", "codmw" — would need separate data source
 }
@@ -104,9 +103,49 @@ class OddsClient:
             try:
                 events = self.get_odds(odds_key)
                 all_odds[pm_sport] = events
+            except requests.HTTPError as e:
+                if e.response is not None and e.response.status_code == 404:
+                    # Sport key not in season — try to auto-resolve for tennis
+                    resolved = self._resolve_sport_key(pm_sport, odds_key)
+                    if resolved:
+                        try:
+                            events = self.get_odds(resolved)
+                            all_odds[pm_sport] = events
+                            SPORT_KEY_MAP[pm_sport] = resolved
+                            log.info("Auto-resolved %s -> %s", pm_sport, resolved)
+                            continue
+                        except Exception:
+                            pass
+                    log.warning("Sport %s (%s) not in season (404)", pm_sport, odds_key)
+                else:
+                    log.warning("Failed to fetch odds for %s (%s): %s", pm_sport, odds_key, e)
             except Exception as e:
                 log.warning("Failed to fetch odds for %s (%s): %s", pm_sport, odds_key, e)
         return all_odds
+
+    def _resolve_sport_key(self, pm_sport: str, failed_key: str) -> str | None:
+        """Try to find the correct sport key via the /sports endpoint."""
+        prefix = None
+        if pm_sport == "atp":
+            prefix = "tennis_atp_"
+        elif pm_sport == "wta":
+            prefix = "tennis_wta_"
+        else:
+            return None
+
+        try:
+            resp = self._session.get(
+                f"{self.BASE_URL}/sports",
+                params={"apiKey": self.api_key},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            for sport in resp.json():
+                if sport["key"].startswith(prefix) and sport.get("active"):
+                    return sport["key"]
+        except Exception as e:
+            log.debug("Failed to resolve sport key for %s: %s", pm_sport, e)
+        return None
 
     def _parse_event_multi(self, event: dict) -> Optional[dict]:
         """Parse an event with h2h, spreads, and totals from the sharpest book."""
