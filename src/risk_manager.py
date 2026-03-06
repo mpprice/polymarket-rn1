@@ -117,15 +117,23 @@ class RiskManager:
         log.info("Recorded: %s %s %.0f shares @ %.4f ($%.2f) on %s",
                  side, outcome, size, price, usdc, slug)
 
-    def record_resolution(self, token_id: str, payout: float):
+    def record_resolution(self, token_id: str, payout: float, cost_basis: float = 0.0):
         """Record a position resolution."""
         pos = self.positions.pop(token_id, None)
         if pos:
             pnl = payout - pos.cost_basis
             self.realized_pnl += pnl
-            self.total_exposure -= pos.cost_basis
+            self.total_exposure = max(0, self.total_exposure - pos.cost_basis)
             log.info("Resolved: %s %s -> PnL $%.2f (payout $%.2f, cost $%.2f)",
                      pos.market_slug, pos.outcome, pnl, payout, pos.cost_basis)
+        elif cost_basis > 0:
+            # Position not in risk_manager (e.g. after restart) — use provided cost
+            pnl = payout - cost_basis
+            self.realized_pnl += pnl
+            self.total_exposure = max(0, self.total_exposure - cost_basis)
+            log.info("Resolved (untracked): token=%s... PnL $%.2f", token_id[:16], pnl)
+        else:
+            log.warning("Resolution for unknown token %s... (no cost_basis)", token_id[:16])
 
     def summary(self) -> dict:
         """Return current risk summary."""

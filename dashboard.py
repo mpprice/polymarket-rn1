@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Polymarket Arb Bot - Paper Trading Dashboard (Enhanced).
+"""Everest Agentic AI Trader - Paper Trading Dashboard (Enhanced).
 
 Single-file Flask dashboard for monitoring the Polymarket sports arbitrage
 paper trading bot. Reads data from CSV/JSON files and bot.log.
@@ -48,12 +48,24 @@ STARTING_CAPITAL = 500.0  # $500 test wallet
 # ---------------------------------------------------------------------------
 
 def _read_csv(path: Path) -> list[dict]:
-    """Read a CSV file and return a list of dicts. Returns [] if missing."""
+    """Read a CSV file and return a list of dicts. Returns [] if missing.
+
+    Normalizes 'resolved' status to 'won'/'lost' based on resolution_price.
+    """
     if not path.exists():
         return []
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        return list(reader)
+        rows = list(reader)
+    # Normalize: strategy writes status='resolved', dashboard expects 'won'/'lost'
+    for row in rows:
+        if row.get("status", "").lower() == "resolved":
+            try:
+                res_price = float(row.get("resolution_price", 0))
+            except (TypeError, ValueError):
+                res_price = 0.0
+            row["status"] = "won" if res_price > 0.5 else "lost"
+    return rows
 
 
 def _safe_float(val, default=0.0):
@@ -409,6 +421,7 @@ def api_pnl_series():
         series.append({
             "trade_num": i + 1,
             "date": closed[:10] if closed else "",
+            "closed_at": closed[:19].replace("T", " ") if closed else "",
             "pnl": round(pnl, 2),
             "cumulative_pnl": round(cum_pnl, 2),
             "equity": round(STARTING_CAPITAL + cum_pnl, 2),
@@ -863,7 +876,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polymarket Arb Bot - Dashboard</title>
+<title>Everest Agentic AI Trader - Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -1147,7 +1160,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <!-- Header -->
 <div class="header">
   <div>
-    <h1><span>&#9670;</span> Polymarket Arb Bot <span>|</span> Dashboard</h1>
+    <h1><span>&#9670;</span> Everest Agentic AI Trader <span>|</span> Dashboard</h1>
   </div>
   <div class="header-right">
     <!-- Traffic Light System -->
@@ -1917,7 +1930,7 @@ async function refreshAll() {
     const startingCapital = (summary && summary.starting_capital) || 500;
     equityChart = destroyChart(equityChart);
     const ctx = document.getElementById('equityChart').getContext('2d');
-    const labels = ['Start', ...pnlSeries.map(d => d.trade_num ? '#' + d.trade_num : d.date)];
+    const labels = ['Start', ...pnlSeries.map(d => d.closed_at || d.date || '#' + d.trade_num)];
     const eqData = [startingCapital, ...pnlSeries.map(d => d.equity)];
     equityChart = new Chart(ctx, {
       type: 'line',
@@ -1946,7 +1959,7 @@ async function refreshAll() {
     cumPnlChart = new Chart(ctx2, {
       type: 'line',
       data: {
-        labels: pnlSeries.map(d => '#' + d.trade_num),
+        labels: pnlSeries.map(d => d.closed_at || d.date || '#' + d.trade_num),
         datasets: [{
           label: 'Cumulative P&L ($)',
           data: pnlSeries.map(d => d.cumulative_pnl),
@@ -1972,7 +1985,7 @@ async function refreshAll() {
         const slice = pnlSeries.slice(start, i + 1);
         const wins = slice.filter(d => d.pnl > 0).length;
         wr.push((wins / slice.length * 100).toFixed(1));
-        wrLabels.push('#' + (i+1));
+        wrLabels.push(pnlSeries[i].closed_at || pnlSeries[i].date || '#' + (i+1));
       }
       rollingWrChart = new Chart(ctx4, {
         type: 'line',
@@ -2445,7 +2458,7 @@ def index():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Polymarket Arb Bot Dashboard")
+    parser = argparse.ArgumentParser(description="Everest Agentic AI Trader Dashboard")
     parser.add_argument("--port", type=int, default=8050, help="Port (default 8050)")
     args = parser.parse_args()
 

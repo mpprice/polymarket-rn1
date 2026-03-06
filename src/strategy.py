@@ -29,6 +29,8 @@ from .matcher import match_markets
 from .risk_manager import RiskManager
 from .position_tracker import PositionTracker
 
+MAX_DAYS_TO_EVENT = 5  # Only trade events resolving within this many days
+
 log = logging.getLogger(__name__)
 
 
@@ -133,7 +135,7 @@ class Strategy:
 
         log.info("Step 4: %d directional opportunities", len(opportunities))
         for i, opp in enumerate(opportunities[:15]):
-            adj = f" adj={opp.adjusted_edge:.1f}%" if opp.adjusted_edge else ""
+            adj = f" adj={opp.adjusted_edge:.1f}%" if opp.adjusted_edge is not None else ""
             rn1 = f" rn1={opp.rn1_score:.0f}" if opp.rn1_score > 0 else ""
             log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s%s | $%.0f",
                      i + 1, opp.slug, opp.outcome, opp.market_type,
@@ -203,6 +205,17 @@ class Strategy:
             return None
         if edge["polymarket_price"] < self.min_entry_price:
             return None
+
+        # Time-to-resolution filter: skip events more than 5 days out
+        commence = odds.get("commence_time", "")
+        if commence:
+            try:
+                ct = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                hours_out = (ct - datetime.now(timezone.utc)).total_seconds() / 3600
+                if hours_out > MAX_DAYS_TO_EVENT * 24:
+                    return None
+            except (ValueError, TypeError):
+                pass
 
         # Liquidity filter
         if pm.get("liquidity", 0) < self.min_liquidity:
@@ -377,11 +390,12 @@ class Strategy:
 
                 # Scan for merge opportunities (every 3rd cycle to save API calls)
                 if self._merge and cycle % 3 == 0:
-                    merge_opps = self.scan_merges()
+                    merge_markets = self.poly.get_active_sports_markets()
+                    merge_opps = self.scan_merges(merge_markets)
                     if merge_opps:
                         log.info("Found %d merge opportunities", len(merge_opps))
                         executed = self._merge.scan_and_execute(
-                            markets=None,  # uses cached
+                            markets=merge_markets,
                             max_usdc_per_merge=self.config.max_position_usdc,
                         )
                         for ex in executed:

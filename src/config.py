@@ -58,5 +58,5 @@ class Config:
         # Tennis
         "atp", "wta",
         # Others
-        "scop", "col", "bra", "mls", "tur",
+        "scop", "bra", "mls", "tur",
     ])

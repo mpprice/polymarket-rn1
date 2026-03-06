@@ -255,7 +255,7 @@ def parse_spread_line(slug: str) -> Optional[float]:
     """
     m = re.search(r'(\d+)pt(\d+)', slug)
     if m:
-        return int(m.group(1)) + int(m.group(2)) / 10.0
+        return int(m.group(1)) + int(m.group(2)) / (10 ** len(m.group(2)))
     m = re.search(r'spread[^0-9]*(\d+\.?\d*)', slug)
     if m:
         return float(m.group(1))
@@ -266,7 +266,7 @@ def parse_total_line(slug: str) -> Optional[float]:
     """Extract total line from slug like 'epl-ars-che-2026-03-08-total-2pt5'."""
     m = re.search(r'(\d+)pt(\d+)', slug)
     if m:
-        return int(m.group(1)) + int(m.group(2)) / 10.0
+        return int(m.group(1)) + int(m.group(2)) / (10 ** len(m.group(2)))
     m = re.search(r'total[^0-9]*(\d+\.?\d*)', slug)
     if m:
         return float(m.group(1))
@@ -419,7 +419,7 @@ def _dates_close(poly_end: str, odds_commence: str, max_hours: int = 48) -> bool
     """Check if two date strings are within max_hours of each other."""
     try:
         if not poly_end or not odds_commence:
-            return True  # Can't verify, assume match
+            return False  # Can't verify dates, reject match
         pd_dt = datetime.fromisoformat(poly_end.replace("Z", "+00:00"))
         od_dt = datetime.fromisoformat(odds_commence.replace("Z", "+00:00"))
         return abs((pd_dt - od_dt).total_seconds()) < max_hours * 3600
