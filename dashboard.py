@@ -2343,10 +2343,9 @@ async function refreshAll() {
       `;
     }
   }
-}
 
-// === RN1 Live Activity ===
-if (rn1live) {
+  // === RN1 Live Activity ===
+  if (rn1live) {
   // Header badge
   const badge = document.getElementById('rn1-live-badge');
   if (badge) {
