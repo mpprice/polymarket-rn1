@@ -149,6 +149,38 @@ class Strategy:
             pm_markets = self.poly.get_active_sports_markets()
         return self._merge.scan_merge_opportunities(pm_markets)
 
+    def _has_conflicting_position(self, slug: str, outcome: str) -> bool:
+        """Check if we already hold the opposite side of this market.
+
+        Prevents: Over + Under on same total, both teams on same h2h,
+        or adjacent total lines on the same game (e.g. O241.5 + U240.5).
+        """
+        import re
+        # Extract base game slug (without spread/total suffix)
+        base = re.sub(r'-(?:total|spread)-.*$', '', slug)
+
+        for pos in self.tracker.positions.values():
+            if pos.status != "open":
+                continue
+            pos_base = re.sub(r'-(?:total|spread)-.*$', '', pos.slug)
+            if pos_base != base:
+                continue
+
+            # Same slug, different outcome = direct conflict (Over vs Under, Team A vs Team B)
+            if pos.slug == slug and pos.outcome != outcome:
+                log.debug("Conflict: already hold %s on %s, skipping %s", pos.outcome, slug, outcome)
+                return True
+
+            # Adjacent total lines on same game (e.g. O241.5 + U240.5)
+            if "total" in slug and "total" in pos.slug:
+                is_over = outcome.lower() == "over"
+                pos_is_over = pos.outcome.lower() == "over"
+                if is_over != pos_is_over:
+                    log.debug("Conflict: opposite side of adjacent total on %s, skipping", base)
+                    return True
+
+        return False
+
     def _evaluate_edge(self, match: dict, edge: dict) -> Opportunity | None:
         """Evaluate a single edge for tradability."""
         pm = match["polymarket"]
@@ -178,6 +210,12 @@ class Strategy:
 
         # Check if already holding this position
         if self.tracker.has_position(edge["token_id"]):
+            return None
+
+        # Prevent contradictory positions (both sides of same game/line)
+        slug = pm.get("slug", "")
+        outcome = edge.get("outcome", "")
+        if slug and self._has_conflicting_position(slug, outcome):
             return None
 
         # Learning-adjusted edge

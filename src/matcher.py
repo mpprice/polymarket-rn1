@@ -862,9 +862,9 @@ def _find_spread_fair_prob(
         if fair_prob is None:
             continue
 
-        # Check if the spread line is close enough (within 1 point)
-        # Polymarket and books may use slightly different lines
-        if abs(abs(odds_point) - pm_spread) > 1.0:
+        # Require exact spread line match to avoid phantom edges
+        # (e.g. -1.5 vs -2.5 creates 30-65% fake edges)
+        if abs(abs(odds_point) - pm_spread) > 0.01:
             continue
 
         # Map Yes/No or team name outcomes
@@ -888,8 +888,9 @@ def _find_total_fair_prob(
         if fair_prob is None:
             continue
 
-        # Check if the total line matches (within 0.5)
-        if abs(odds_point - pm_total) > 0.5:
+        # Require exact total line match to avoid phantom edges
+        # (e.g. O/U 1.5 vs 2.5 creates 30-37% fake edges)
+        if abs(odds_point - pm_total) > 0.01:
             continue
 
         name_lower = name.lower()
