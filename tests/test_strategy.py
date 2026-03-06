@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch, PropertyMock
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass
 
-from src.strategy import Strategy, Opportunity, MAX_DAYS_TO_EVENT
+from src.strategy import Strategy, Opportunity, MAX_DAYS_TO_EVENT, MIN_VOLUME_24H
 from src.config import Config
 
 
@@ -67,8 +67,8 @@ def _make_strategy():
 
 
 def _make_match(slug="nba-lakers-vs-celtics", question="Who wins?",
-                liquidity=500.0, sport="nba", neg_risk=False,
-                commence_time=None):
+                liquidity=500.0, volume_24h=5000.0, sport="nba",
+                neg_risk=False, commence_time=None):
     """Build a mock matched market dict."""
     if commence_time is None:
         # 2 hours from now (within range)
@@ -80,6 +80,7 @@ def _make_match(slug="nba-lakers-vs-celtics", question="Who wins?",
             "slug": slug,
             "question": question,
             "liquidity": liquidity,
+            "volume_24h": volume_24h,
             "sport": sport,
             "neg_risk": neg_risk,
         },
@@ -207,6 +208,24 @@ class TestEvaluateEdge:
         opp = strat._evaluate_edge(m, e)
         assert opp is None
         assert strat._filter_counts.get("liquidity", 0) == 1
+
+    def test_low_volume_filtered(self, strat):
+        strat._pending_exposure = 0.0
+        strat._filter_counts = {}
+        m = _make_match(volume_24h=500.0)  # Below MIN_VOLUME_24H=1000
+        e = _make_edge()
+        opp = strat._evaluate_edge(m, e)
+        assert opp is None
+        assert strat._filter_counts.get("low_volume", 0) == 1
+
+    def test_high_volume_passes(self, strat):
+        strat._pending_exposure = 0.0
+        strat._filter_counts = {}
+        m = _make_match(volume_24h=10000.0)  # Well above threshold
+        e = _make_edge()
+        opp = strat._evaluate_edge(m, e)
+        assert opp is not None
+        assert opp.volume_24h == 10000.0
 
     def test_already_held_token_filtered(self, strat):
         strat._pending_exposure = 0.0

@@ -10,12 +10,14 @@ RN1 is highly profitable (+$20.35M total, +$85K/day avg). Key mechanisms:
 - MAKER orders only (avoid 3-second TAKER delay on sports)
 
 Key parameters calibrated from research:
-- Focus on 5-40c range (highest mispricing vs sharp books)
+- Full 5-95c price range for h2h/spread/total markets
 - Use MAKER orders only (sports markets have 3-second TAKER delay)
-- 5% Kelly fraction max
+- 15% Kelly fraction, $8 max position
+- Min $1K 24h volume (avoid market impact), prefer higher volume
 - Hold to resolution (not scalping)
-- Target 3-8% EV per trade (Gambot range)
-- Monitor across all sports simultaneously
+- Target 3-20% edge per trade, min $100 liquidity
+- Monitor 26 sports simultaneously
+- Slippage tracking: expected vs fill price logged per trade
 """
 import logging
 import time
@@ -35,6 +37,8 @@ MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
 log = logging.getLogger(__name__)
 
 
+MIN_VOLUME_24H = 1000  # $1K minimum 24h volume — avoid moving illiquid markets
+
 @dataclass
 class Opportunity:
     slug: str
@@ -53,6 +57,7 @@ class Opportunity:
     commence_time: str = ""
     adjusted_edge: float = None  # After learning adjustment
     rn1_score: float = 0.0  # RN1 pattern match score (0-100)
+    volume_24h: float = 0.0  # Polymarket 24h volume in USD
 
 
 class Strategy:
@@ -141,8 +146,8 @@ class Strategy:
             log.info("Edge filter breakdown (%d total, %d passed): %s",
                      total_edges, len(candidates), self._filter_counts)
 
-        # Sort by edge first, then RN1 score as tiebreaker
-        candidates.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.rn1_score))
+        # Sort by edge first, then volume (prefer liquid markets), then RN1 score
+        candidates.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.volume_24h, -x.rn1_score))
 
         # Second pass: enforce cumulative exposure limit (best edges first)
         opportunities = []
@@ -252,6 +257,11 @@ class Strategy:
             self._filter_counts["liquidity"] = self._filter_counts.get("liquidity", 0) + 1
             return None
 
+        # Volume filter: avoid markets where our trades move the price
+        if pm.get("volume_24h", 0) < MIN_VOLUME_24H:
+            self._filter_counts["low_volume"] = self._filter_counts.get("low_volume", 0) + 1
+            return None
+
         # Check if already holding this position
         if self.tracker.has_position(edge["token_id"]):
             self._filter_counts["already_held"] = self._filter_counts.get("already_held", 0) + 1
@@ -318,6 +328,7 @@ class Strategy:
             commence_time=odds.get("commence_time", ""),
             adjusted_edge=adjusted_edge,
             rn1_score=rn1_score,
+            volume_24h=pm.get("volume_24h", 0),
         )
 
     def execute(self, opportunities: list[Opportunity]):
@@ -325,6 +336,18 @@ class Strategy:
         for opp in opportunities:
             try:
                 shares = opp.size_usdc / opp.poly_price
+
+                # Slippage estimation: fetch best ask price before ordering
+                expected_price = opp.poly_price
+                best_ask = None
+                slippage_bps = 0.0
+                try:
+                    best_ask = self.poly.get_best_price(opp.token_id, "BUY")
+                    if best_ask and best_ask > 0:
+                        slippage_bps = (best_ask - expected_price) / expected_price * 10000
+                except Exception:
+                    pass  # Non-critical — don't block the trade
+
                 result = self.poly.place_limit_order(
                     token_id=opp.token_id,
                     price=opp.poly_price,
@@ -333,6 +356,15 @@ class Strategy:
                     neg_risk=opp.neg_risk,
                 )
 
+                # In live mode, check actual fill price for slippage tracking
+                fill_price = None
+                actual_slippage_bps = None
+                if not self.dry_run and isinstance(result, dict):
+                    fill_price = result.get("avgPrice") or result.get("price")
+                    if fill_price:
+                        fill_price = float(fill_price)
+                        actual_slippage_bps = (fill_price - expected_price) / expected_price * 10000
+
                 # Track position
                 self.tracker.open_position(
                     token_id=opp.token_id,
@@ -340,7 +372,7 @@ class Strategy:
                     outcome=opp.outcome,
                     sport=opp.sport,
                     market_type=opp.market_type,
-                    entry_price=opp.poly_price,
+                    entry_price=fill_price or opp.poly_price,
                     fair_prob=opp.fair_prob,
                     edge_pct=opp.edge_pct,
                     shares=shares,
@@ -354,13 +386,20 @@ class Strategy:
                     slug=opp.slug,
                     side="BUY",
                     size=shares,
-                    price=opp.poly_price,
+                    price=fill_price or opp.poly_price,
                     usdc=opp.size_usdc,
                 )
 
-                log.info("ORDER: %s %s [%s] %.0f shares @ %.3f ($%.0f) edge=+%.1f%%",
+                # Log with slippage info
+                slip_str = ""
+                if best_ask and best_ask > 0:
+                    slip_str = f" | ask={best_ask:.3f} slip={slippage_bps:+.0f}bps"
+                if actual_slippage_bps is not None:
+                    slip_str += f" fill={fill_price:.3f} actual_slip={actual_slippage_bps:+.0f}bps"
+                log.info("ORDER: %s %s [%s] %.0f shares @ %.3f ($%.0f) edge=+%.1f%% vol=$%.0f%s",
                          opp.market_type.upper(), opp.slug, opp.outcome,
-                         shares, opp.poly_price, opp.size_usdc, opp.edge_pct)
+                         shares, opp.poly_price, opp.size_usdc, opp.edge_pct,
+                         opp.volume_24h, slip_str)
 
             except Exception as e:
                 log.error("Order failed for %s: %s", opp.slug, e)

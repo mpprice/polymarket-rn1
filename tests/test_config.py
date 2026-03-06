@@ -61,9 +61,9 @@ class TestConfigDefaults:
         assert cfg.max_edge_pct == 20.0
 
     def test_effective_min_edge_with_env(self):
-        """With the project .env loaded, min_edge is 1.5."""
+        """With the project .env loaded, min_edge is 3.0."""
         cfg = Config()
-        assert cfg.min_edge_pct == 1.5
+        assert cfg.min_edge_pct == 3.0
 
     def test_effective_max_total_exposure_with_env(self):
         """With the project .env loaded, exposure is 400."""

@@ -238,6 +238,7 @@ def generate():
             ["Price Range", "5c - 95c", "Full range for h2h/spread/total markets"],
             ["Max Time to Event", "10 days", "Balance capital lockup vs coverage"],
             ["Min Liquidity", "$100", "Ensures reliable midpoint pricing"],
+            ["Min 24h Volume", "$1,000", "Avoid moving illiquid markets; prefer high volume"],
             ["Scan Interval", "300 seconds", "Balance API cost vs opportunity capture"],
             ["Target Sports", "26", "EPL, NBA, NFL, NHL, CBB, ATP, WTA, etc."],
         ],
@@ -340,7 +341,9 @@ def generate():
         "The edge represents the percentage by which Polymarket underprices an outcome "
         "relative to sharp-book fair value. Filters: min 3%, max 20%, price 5-95c, "
         "exact line match for spreads/totals (0.01 tolerance), max 10 days to event, "
-        "min $100 liquidity. Exotic sub-markets (first-set, set-handicap, corners, etc.) "
+        "min $100 liquidity, min $1,000 24h volume. Markets are sorted by edge first, "
+        "then by volume (higher volume preferred) to prioritise liquid markets. "
+        "Exotic sub-markets (first-set, set-handicap, corners, etc.) "
         "are excluded to prevent phantom edges from cross-market-type comparison."
     ))
 
@@ -410,6 +413,19 @@ def generate():
     add_bullet(doc, " No opposing sides of same event (over+under, yes+no)", bold_prefix="Conflict check:")
     add_bullet(doc, " No duplicate positions on same token", bold_prefix="Duplicate check:")
     add_bullet(doc, " effective_bankroll = initial + realized_pnl", bold_prefix="Dynamic bankroll:")
+
+    add_heading(doc, "5.5 Slippage Estimation & Tracking", level=2)
+    add_body(doc, (
+        "Before each order, the system fetches the current best ask price from the Polymarket "
+        "orderbook and computes expected slippage in basis points:"
+    ))
+    add_formula(doc, "slippage_bps = (best_ask - expected_price) / expected_price * 10,000")
+    add_body(doc, (
+        "In live mode, the actual fill price is captured from the order result and compared "
+        "to the expected price to compute realised slippage. Both pre-trade and post-trade "
+        "slippage are logged per trade for ongoing monitoring. Markets with <$1,000 24h volume "
+        "are excluded entirely to minimise market impact."
+    ))
 
     # ── 6. Merge Arbitrage ──────────────────────────────────────────
     add_heading(doc, "6. Merge Arbitrage (Risk-Free)", level=1)
