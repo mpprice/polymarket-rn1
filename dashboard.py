@@ -671,6 +671,143 @@ def api_sport_heatmap():
 
 
 # ---------------------------------------------------------------------------
+# RN1 Insights API
+# ---------------------------------------------------------------------------
+
+_rn1_analyzer_cache = None
+
+def _get_rn1_analyzer():
+    """Lazily load the RN1 analyzer (cached)."""
+    global _rn1_analyzer_cache
+    if _rn1_analyzer_cache is None:
+        try:
+            from src.rn1_analyzer import RN1Analyzer
+            _rn1_analyzer_cache = RN1Analyzer()
+        except Exception as e:
+            return None
+    return _rn1_analyzer_cache
+
+
+@app.route("/api/rn1")
+def api_rn1():
+    """RN1 pattern insights endpoint."""
+    analyzer = _get_rn1_analyzer()
+    if analyzer is None:
+        return jsonify({"error": "RN1 analyzer not available"}), 503
+
+    return jsonify({
+        "top_sports": analyzer.top_sports_by_profit()[:15],
+        "entry_price_distribution": analyzer.entry_price_distribution(),
+        "merge_stats": {
+            "count": analyzer.merge_patterns().get("count", 0),
+            "total_usdc": analyzer.merge_patterns().get("total_usdc", 0),
+            "avg_size": analyzer.merge_patterns().get("avg_size", 0),
+            "unique_slugs": analyzer.merge_patterns().get("unique_slugs", 0),
+        },
+        "market_types": analyzer.market_type_preferences(),
+        "time_of_day": analyzer.time_of_day_patterns(),
+        "holding_periods": analyzer.holding_period_analysis(),
+        "position_sizing": analyzer.position_sizing_patterns().get("overall", {}),
+        "record_counts": analyzer.patterns.get("record_counts", {}),
+        "computed_at": analyzer.patterns.get("computed_at", ""),
+    })
+
+
+# ---------------------------------------------------------------------------
+# RN1 Live Activity API
+# ---------------------------------------------------------------------------
+
+RN1_LIVE_SUMMARY = DATA_DIR / "rn1_live_summary.json"
+RN1_LIVE_TRADES = DATA_DIR / "rn1_live_trades.json"
+
+
+def _read_json_file(path: Path) -> dict | list | None:
+    """Safely read a JSON file, return None on any error."""
+    if not path.exists():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+@app.route("/api/rn1_live")
+def api_rn1_live():
+    """RN1 live activity endpoint — market discovery data.
+
+    Returns active market count, hot markets, and last 15 activity events.
+    Activity events show type/slug/timestamp only — NOT trade details we'd copy.
+    """
+    summary = _read_json_file(RN1_LIVE_SUMMARY)
+    trades_raw = _read_json_file(RN1_LIVE_TRADES)
+
+    if summary is None:
+        summary = {
+            "last_poll": None,
+            "active_markets": [],
+            "hot_markets": [],
+            "new_markets": [],
+            "trades_last_5m": 0,
+            "trades_last_15m": 0,
+            "total_buffered": 0,
+        }
+
+    # Extract last 15 activity events (type/slug/timestamp only — no direction)
+    recent_activity = []
+    if isinstance(trades_raw, list):
+        # Sort by timestamp descending, take last 15
+        sorted_trades = sorted(trades_raw, key=lambda t: t.get("timestamp", 0), reverse=True)
+        for t in sorted_trades[:15]:
+            recent_activity.append({
+                "type": t.get("type", ""),
+                "slug": t.get("slug", ""),
+                "title": t.get("title", ""),
+                "timestamp": t.get("timestamp", 0),
+                "datetime": t.get("datetime", ""),
+                "usdc_size": round(t.get("usdc_size", 0) or 0, 2),
+            })
+
+    # Check if tracker is alive (summary updated in last 2 minutes)
+    tracker_alive = False
+    if summary.get("last_poll"):
+        try:
+            from datetime import datetime as _dt
+            last = _dt.fromisoformat(summary["last_poll"].replace("Z", "+00:00"))
+            age = (datetime.now(timezone) - last).total_seconds() if hasattr(timezone, '__call__') else 999
+            # Simpler: check file mtime
+            if RN1_LIVE_SUMMARY.exists():
+                age = time.time() - os.path.getmtime(RN1_LIVE_SUMMARY)
+                tracker_alive = age < 120
+        except Exception:
+            if RN1_LIVE_SUMMARY.exists():
+                tracker_alive = (time.time() - os.path.getmtime(RN1_LIVE_SUMMARY)) < 120
+
+    # Check which of our open positions overlap with RN1 active markets
+    rn1_active_set = set(summary.get("active_markets", []))
+    our_positions = _read_csv(POSITIONS_FILE)
+    overlap_slugs = []
+    for p in our_positions:
+        status = p.get("status", "").lower()
+        slug = p.get("slug", "")
+        if status in ("open", "pending") and slug in rn1_active_set:
+            overlap_slugs.append(slug)
+
+    return jsonify({
+        "tracker_alive": tracker_alive,
+        "active_market_count": len(summary.get("active_markets", [])),
+        "active_markets": summary.get("active_markets", []),
+        "hot_markets": summary.get("hot_markets", []),
+        "new_markets": summary.get("new_markets", []),
+        "trades_last_5m": summary.get("trades_last_5m", 0),
+        "trades_last_15m": summary.get("trades_last_15m", 0),
+        "total_buffered": summary.get("total_buffered", 0),
+        "recent_activity": recent_activity,
+        "our_positions_in_rn1_markets": overlap_slugs,
+    })
+
+
+# ---------------------------------------------------------------------------
 # HTML Dashboard
 # ---------------------------------------------------------------------------
 
@@ -938,6 +1075,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
   </div>
   <div class="header-right">
     <span class="badge badge-paper">Paper Trade</span>
+    <span id="rn1-live-badge" class="badge" style="background:var(--purple);color:#fff;display:none;">RN1: 0 mkts</span>
     <span id="bot-status" class="badge badge-stopped">Stopped</span>
     <span id="utc-time" class="utc-time"></span>
   </div>
@@ -991,6 +1129,8 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <button class="tab-btn" onclick="switchTab('performance')">Performance</button>
     <button class="tab-btn" onclick="switchTab('positions')">Positions</button>
     <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
+    <button class="tab-btn" onclick="switchTab('rn1')">RN1 Insights</button>
+    <button class="tab-btn" onclick="switchTab('rn1live')">RN1 Live</button>
     <button class="tab-btn" onclick="switchTab('learning')">Learning Agent</button>
     <button class="tab-btn" onclick="switchTab('log')">Bot Log</button>
   </div>
@@ -1193,6 +1333,119 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- TAB: RN1 Insights -->
+  <div class="tab-content" id="tab-rn1">
+    <div class="charts-grid">
+      <div class="section">
+        <h2>RN1 Sport Allocation (by USDC Volume)</h2>
+        <div class="chart-container"><canvas id="rn1SportChart"></canvas></div>
+        <div class="table-wrap" style="margin-top:14px;">
+          <table>
+            <thead><tr><th>Sport</th><th>Buy USDC</th><th>Buys</th><th>Merges</th><th>Redeems</th><th>Est. Profit</th></tr></thead>
+            <tbody id="rn1-sport-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="section">
+        <h2>RN1 Entry Price Distribution</h2>
+        <div class="chart-container"><canvas id="rn1PriceChart"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="section">
+        <h2>RN1 Market Type Preferences</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Type</th><th>Trades</th><th>USDC</th><th>% of Trades</th><th>Avg Price</th></tr></thead>
+            <tbody id="rn1-mtype-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="section">
+        <h2>RN1 Merge Stats</h2>
+        <div id="rn1-merge-stats" class="learning-grid">
+          <div class="empty">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="section">
+        <h2>RN1 Activity by Hour (UTC)</h2>
+        <div class="chart-container"><canvas id="rn1HourChart"></canvas></div>
+      </div>
+      <div class="section">
+        <h2>RN1 Holding Periods</h2>
+        <div class="chart-container"><canvas id="rn1HoldChart"></canvas></div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>RN1 Summary</h2>
+      <div id="rn1-summary" class="learning-grid">
+        <div class="empty">Loading RN1 data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: RN1 Live Activity -->
+  <div class="tab-content" id="tab-rn1live">
+    <div class="cards" id="rn1live-cards">
+      <div class="card">
+        <div class="card-label">Tracker Status</div>
+        <div class="card-value" id="rn1l-status">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Active Markets (15m)</div>
+        <div class="card-value" id="rn1l-active">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Hot Markets</div>
+        <div class="card-value" id="rn1l-hot">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">New Markets (5m)</div>
+        <div class="card-value" id="rn1l-new">0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Trades (5m / 15m)</div>
+        <div class="card-value" id="rn1l-trades">0 / 0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Our Positions in RN1 Markets</div>
+        <div class="card-value" id="rn1l-overlap">0</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="section">
+        <h2>Hot Markets (High RN1 Activity)</h2>
+        <div id="rn1l-hot-list" class="empty">No hot markets</div>
+      </div>
+      <div class="section">
+        <h2>New Markets (RN1 Just Entered)</h2>
+        <div id="rn1l-new-list" class="empty">No new markets</div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Recent RN1 Activity (Last 15 Events)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Time (UTC)</th>
+            <th>Type</th>
+            <th>Market</th>
+            <th>Volume ($)</th>
+          </tr></thead>
+          <tbody id="rn1l-activity-tbody">
+            <tr><td colspan="4" class="empty">No activity data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section">
+      <h2>All Active Markets (15m)</h2>
+      <div id="rn1l-active-list" class="empty">No active markets</div>
+    </div>
+  </div>
+
   <!-- TAB: Learning Agent -->
   <div class="tab-content" id="tab-learning">
     <div class="section" id="learning-section">
@@ -1316,7 +1569,7 @@ function destroyChart(chart) { if (chart) chart.destroy(); return null; }
 // --- Main refresh ---
 async function refreshAll() {
   const [summary, positions, resolved, log, sports, mtypes, learning,
-         pnlSeries, dailyPnl, edgeDist, calibration, stats, activity, heatmap] =
+         pnlSeries, dailyPnl, edgeDist, calibration, stats, activity, heatmap, rn1, rn1live] =
     await Promise.all([
       fetchJSON('/api/summary'),
       fetchJSON('/api/positions'),
@@ -1332,6 +1585,8 @@ async function refreshAll() {
       fetchJSON('/api/stats'),
       fetchJSON('/api/activity'),
       fetchJSON('/api/sport_heatmap'),
+      fetchJSON('/api/rn1'),
+      fetchJSON('/api/rn1_live'),
     ]);
 
   lastUpdated = Date.now();
@@ -1776,6 +2031,236 @@ async function refreshAll() {
       return `<div class="${cls}">${escaped}</div>`;
     }).join('');
     box.scrollTop = box.scrollHeight;
+  }
+
+  // === RN1 Insights ===
+  if (rn1 && !rn1.error) {
+    // Sport allocation chart + table
+    if (rn1.top_sports && rn1.top_sports.length > 0) {
+      const sportLabels = rn1.top_sports.slice(0,10).map(s => s.sport);
+      const sportData = rn1.top_sports.slice(0,10).map(s => s.buy_usdc || 0);
+      const sportColors = ['#00d2ff','#4caf50','#ff9800','#e91e63','#9c27b0',
+                           '#00bcd4','#ffeb3b','#ff5722','#3f51b5','#8bc34a'];
+
+      const ctx1 = document.getElementById('rn1SportChart');
+      if (ctx1) {
+        if (window._rn1SportChart) window._rn1SportChart.destroy();
+        window._rn1SportChart = new Chart(ctx1, {
+          type: 'doughnut',
+          data: {
+            labels: sportLabels,
+            datasets: [{data: sportData, backgroundColor: sportColors}]
+          },
+          options: {responsive:true, maintainAspectRatio:false,
+                    plugins:{legend:{position:'right',labels:{color:'#c8d6e5',font:{size:11}}}}}
+        });
+      }
+
+      const stb = document.getElementById('rn1-sport-tbody');
+      if (stb) {
+        stb.innerHTML = rn1.top_sports.slice(0,15).map(s => `<tr>
+          <td>${s.sport}</td>
+          <td>$${(s.buy_usdc||0).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+          <td>${s.buy_count||0}</td>
+          <td>${s.merge_count||0}</td>
+          <td>${s.redeem_count||0}</td>
+          <td class="${(s.estimated_profit||0)>=0?'pnl-pos':'pnl-neg'}">$${(s.estimated_profit||0).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+        </tr>`).join('');
+      }
+    }
+
+    // Entry price distribution chart
+    if (rn1.entry_price_distribution) {
+      const buckets = Object.entries(rn1.entry_price_distribution);
+      const priceLabels = buckets.map(b => b[0]);
+      const priceCounts = buckets.map(b => b[1].count);
+      const ctx2 = document.getElementById('rn1PriceChart');
+      if (ctx2) {
+        if (window._rn1PriceChart) window._rn1PriceChart.destroy();
+        window._rn1PriceChart = new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: priceLabels,
+            datasets: [{label:'Trades', data:priceCounts,
+                       backgroundColor: priceCounts.map((c,i) => {
+                         const idx = parseInt(priceLabels[i]);
+                         return (idx >= 5 && idx <= 35) ? '#00d2ff' : '#1e3a5f';
+                       })}]
+          },
+          options: {...chartDefaults, scales: axisDefaults,
+                   plugins:{legend:{display:false},
+                           title:{display:true, text:'Sweet spot: 5-40c (highlighted)',
+                                  color:'#8892a4', font:{size:12}}}}
+        });
+      }
+    }
+
+    // Market type table
+    if (rn1.market_types) {
+      const mtb = document.getElementById('rn1-mtype-tbody');
+      if (mtb) {
+        mtb.innerHTML = Object.entries(rn1.market_types).map(([k,v]) => `<tr>
+          <td>${k}</td>
+          <td>${v.count}</td>
+          <td>$${(v.usdc||0).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+          <td>${v.pct_of_trades}%</td>
+          <td>${(v.avg_price||0).toFixed(3)}</td>
+        </tr>`).join('');
+      }
+    }
+
+    // Merge stats
+    if (rn1.merge_stats) {
+      const ms = rn1.merge_stats;
+      const msEl = document.getElementById('rn1-merge-stats');
+      if (msEl) {
+        msEl.innerHTML = `
+          <div class="learn-stat"><div class="learn-label">Total Merges</div><div class="learn-value">${ms.count}</div></div>
+          <div class="learn-stat"><div class="learn-label">Total USDC Merged</div><div class="learn-value">$${(ms.total_usdc||0).toLocaleString(undefined,{maximumFractionDigits:0})}</div></div>
+          <div class="learn-stat"><div class="learn-label">Avg Merge Size</div><div class="learn-value">$${(ms.avg_size||0).toFixed(2)}</div></div>
+          <div class="learn-stat"><div class="learn-label">Unique Slugs Merged</div><div class="learn-value">${ms.unique_slugs||0}</div></div>
+        `;
+      }
+    }
+
+    // Hour chart
+    if (rn1.time_of_day && rn1.time_of_day.by_hour_utc) {
+      const hours = Object.entries(rn1.time_of_day.by_hour_utc);
+      const hLabels = hours.map(h => h[0] + ':00');
+      const hCounts = hours.map(h => h[1].count);
+      const ctx3 = document.getElementById('rn1HourChart');
+      if (ctx3) {
+        if (window._rn1HourChart) window._rn1HourChart.destroy();
+        window._rn1HourChart = new Chart(ctx3, {
+          type: 'bar',
+          data: {labels: hLabels, datasets:[{label:'Trades', data:hCounts, backgroundColor:'#4caf50'}]},
+          options: {...chartDefaults, scales: axisDefaults, plugins:{legend:{display:false}}}
+        });
+      }
+    }
+
+    // Holding period chart
+    if (rn1.holding_periods && rn1.holding_periods.buckets) {
+      const hb = Object.entries(rn1.holding_periods.buckets);
+      const ctx4 = document.getElementById('rn1HoldChart');
+      if (ctx4) {
+        if (window._rn1HoldChart) window._rn1HoldChart.destroy();
+        window._rn1HoldChart = new Chart(ctx4, {
+          type: 'bar',
+          data: {labels: hb.map(b=>b[0]), datasets:[{label:'Slugs', data:hb.map(b=>b[1]), backgroundColor:'#ff9800'}]},
+          options: {...chartDefaults, scales: axisDefaults, plugins:{legend:{display:false}}}
+        });
+      }
+    }
+
+    // Summary cards
+    const sumEl = document.getElementById('rn1-summary');
+    if (sumEl && rn1.record_counts) {
+      const rc = rn1.record_counts;
+      sumEl.innerHTML = `
+        <div class="learn-stat"><div class="learn-label">Total Records</div><div class="learn-value">${((rc.buys||0)+(rc.sells||0)+(rc.merges||0)+(rc.redeems||0)).toLocaleString()}</div></div>
+        <div class="learn-stat"><div class="learn-label">Buys</div><div class="learn-value">${(rc.buys||0).toLocaleString()}</div></div>
+        <div class="learn-stat"><div class="learn-label">Sells</div><div class="learn-value">${rc.sells||0}</div></div>
+        <div class="learn-stat"><div class="learn-label">Merges</div><div class="learn-value">${(rc.merges||0).toLocaleString()}</div></div>
+        <div class="learn-stat"><div class="learn-label">Redeems</div><div class="learn-value">${(rc.redeems||0).toLocaleString()}</div></div>
+        <div class="learn-stat"><div class="learn-label">Avg Position Size</div><div class="learn-value">$${(rn1.position_sizing?.mean||0).toFixed(2)}</div></div>
+        <div class="learn-stat"><div class="learn-label">Peak Hour (UTC)</div><div class="learn-value">${rn1.time_of_day?.peak_hour_utc ?? '--'}:00</div></div>
+        <div class="learn-stat"><div class="learn-label">Peak Day</div><div class="learn-value">${rn1.time_of_day?.peak_day ?? '--'}</div></div>
+        <div class="learn-stat"><div class="learn-label">Median Hold</div><div class="learn-value">${rn1.holding_periods?.median_hours ?? '--'}h</div></div>
+        <div class="learn-stat"><div class="learn-label">Computed At</div><div class="learn-value" style="font-size:12px;">${rn1.computed_at || '--'}</div></div>
+      `;
+    }
+  }
+}
+
+// === RN1 Live Activity ===
+if (rn1live) {
+  // Header badge
+  const badge = document.getElementById('rn1-live-badge');
+  if (badge) {
+    const cnt = rn1live.active_market_count || 0;
+    if (cnt > 0 && rn1live.tracker_alive) {
+      badge.style.display = 'inline-block';
+      badge.textContent = 'RN1: ' + cnt + ' mkt' + (cnt !== 1 ? 's' : '');
+      badge.style.background = rn1live.hot_markets?.length > 0 ? 'var(--orange)' : 'var(--purple)';
+    } else {
+      badge.style.display = rn1live.tracker_alive ? 'inline-block' : 'none';
+      badge.textContent = rn1live.tracker_alive ? 'RN1: idle' : '';
+      badge.style.background = 'var(--text-muted)';
+    }
+  }
+
+  // Status cards
+  const statusEl = document.getElementById('rn1l-status');
+  if (statusEl) {
+    statusEl.textContent = rn1live.tracker_alive ? 'Online' : 'Offline';
+    statusEl.style.color = rn1live.tracker_alive ? 'var(--green)' : 'var(--red)';
+  }
+  const setCard = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setCard('rn1l-active', rn1live.active_market_count || 0);
+  setCard('rn1l-hot', (rn1live.hot_markets || []).length);
+  setCard('rn1l-new', (rn1live.new_markets || []).length);
+  setCard('rn1l-trades', (rn1live.trades_last_5m || 0) + ' / ' + (rn1live.trades_last_15m || 0));
+  setCard('rn1l-overlap', (rn1live.our_positions_in_rn1_markets || []).length);
+
+  // Hot markets list
+  const hotEl = document.getElementById('rn1l-hot-list');
+  if (hotEl) {
+    const hot = rn1live.hot_markets || [];
+    if (hot.length > 0) {
+      hotEl.innerHTML = hot.map(s => '<span class="badge" style="background:var(--orange);color:#000;margin:4px;">' + s + '</span>').join('');
+    } else {
+      hotEl.innerHTML = '<div class="empty">No hot markets right now</div>';
+    }
+  }
+
+  // New markets list
+  const newEl = document.getElementById('rn1l-new-list');
+  if (newEl) {
+    const nm = rn1live.new_markets || [];
+    if (nm.length > 0) {
+      newEl.innerHTML = nm.map(s => '<span class="badge" style="background:var(--green);color:#000;margin:4px;">' + s + '</span>').join('');
+    } else {
+      newEl.innerHTML = '<div class="empty">No new markets right now</div>';
+    }
+  }
+
+  // Recent activity table
+  const tbody = document.getElementById('rn1l-activity-tbody');
+  if (tbody) {
+    const acts = rn1live.recent_activity || [];
+    if (acts.length > 0) {
+      tbody.innerHTML = acts.map(a => {
+        const typeColor = a.type === 'TRADE' ? 'var(--blue)' : a.type === 'REDEEM' ? 'var(--green)' : 'var(--yellow)';
+        const dt = a.datetime ? a.datetime.replace('T',' ').substring(0,19) : '';
+        return `<tr>
+          <td class="mono" style="font-size:12px;">${dt}</td>
+          <td><span style="color:${typeColor};font-weight:600;">${a.type}</span></td>
+          <td><a href="https://polymarket.com/event/${a.slug}" target="_blank" title="${a.title || a.slug}">${shortSlug(a.slug)}</a></td>
+          <td class="mono">$${(a.usdc_size || 0).toFixed(2)}</td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No recent activity</td></tr>';
+    }
+  }
+
+  // All active markets list
+  const activeEl = document.getElementById('rn1l-active-list');
+  if (activeEl) {
+    const am = rn1live.active_markets || [];
+    if (am.length > 0) {
+      const overlap = new Set(rn1live.our_positions_in_rn1_markets || []);
+      activeEl.innerHTML = am.map(s => {
+        const style = overlap.has(s)
+          ? 'background:var(--green);color:#000;margin:4px;'
+          : 'background:var(--card-border);color:var(--text);margin:4px;';
+        const label = overlap.has(s) ? s + ' [OUR POS]' : s;
+        return '<span class="badge" style="' + style + '">' + label + '</span>';
+      }).join('');
+    } else {
+      activeEl.innerHTML = '<div class="empty">No active markets in last 15 minutes</div>';
+    }
   }
 }
 

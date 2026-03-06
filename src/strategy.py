@@ -49,6 +49,7 @@ class Opportunity:
     sport: str = ""
     commence_time: str = ""
     adjusted_edge: float = None  # After learning adjustment
+    rn1_score: float = 0.0  # RN1 pattern match score (0-100)
 
 
 class Strategy:
@@ -65,6 +66,7 @@ class Strategy:
         # Optional modules
         self._learning = None
         self._merge = None
+        self._rn1_signals = None
 
         if config.learning_enabled:
             try:
@@ -82,6 +84,14 @@ class Strategy:
                 log.info("Merge arbitrage enabled")
             except Exception as e:
                 log.warning("Merge strategy unavailable: %s", e)
+
+        # RN1 pattern signals
+        try:
+            from .rn1_signals import RN1Signals
+            self._rn1_signals = RN1Signals()
+            log.info("RN1 signals enabled")
+        except Exception as e:
+            log.warning("RN1 signals unavailable: %s", e)
 
         # Strategy-specific parameters
         self.min_edge_pct = config.min_edge_pct
@@ -117,14 +127,16 @@ class Strategy:
                 if opp:
                     opportunities.append(opp)
 
-        opportunities.sort(key=lambda x: -(x.adjusted_edge or x.edge_pct))
+        # Sort by edge first, then RN1 score as tiebreaker
+        opportunities.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.rn1_score))
 
         log.info("Step 4: %d directional opportunities", len(opportunities))
         for i, opp in enumerate(opportunities[:15]):
             adj = f" adj={opp.adjusted_edge:.1f}%" if opp.adjusted_edge else ""
-            log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s | $%.0f",
+            rn1 = f" rn1={opp.rn1_score:.0f}" if opp.rn1_score > 0 else ""
+            log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s%s | $%.0f",
                      i + 1, opp.slug, opp.outcome, opp.market_type,
-                     opp.poly_price, opp.fair_prob, opp.edge_pct, adj, opp.size_usdc)
+                     opp.poly_price, opp.fair_prob, opp.edge_pct, adj, rn1, opp.size_usdc)
 
         return opportunities
 
@@ -195,6 +207,16 @@ class Strategy:
         if not self.risk.check_can_trade(size):
             return None
 
+        # RN1 pattern score
+        rn1_score = 0.0
+        if self._rn1_signals:
+            rn1_score = self._rn1_signals.score_opportunity(
+                slug=pm["slug"],
+                sport=pm.get("sport", ""),
+                market_type=edge.get("market_type", "h2h"),
+                price=edge["polymarket_price"],
+            )
+
         return Opportunity(
             slug=pm["slug"],
             question=pm["question"],
@@ -211,6 +233,7 @@ class Strategy:
             sport=pm.get("sport", ""),
             commence_time=odds.get("commence_time", ""),
             adjusted_edge=adjusted_edge,
+            rn1_score=rn1_score,
         )
 
     def execute(self, opportunities: list[Opportunity]):
