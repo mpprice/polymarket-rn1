@@ -31,6 +31,15 @@ class RiskManager:
         self.realized_pnl: float = 0.0
         self.trade_count: int = 0
 
+    def sync_from_tracker(self, tracker) -> None:
+        """Sync exposure state from position tracker (call after tracker loads CSV)."""
+        open_pos = [p for p in tracker.positions.values()
+                    if getattr(p, 'status', 'open').lower() == 'open']
+        total = sum(getattr(p, 'cost_usdc', 0.0) for p in open_pos)
+        self.total_exposure = total
+        log.info("Risk manager synced: %d open positions, $%.2f exposure",
+                 len(open_pos), total)
+
     def check_can_trade(self, usdc_amount: float) -> bool:
         """Check if a new trade is within risk limits."""
         if self.total_exposure + usdc_amount > self.config.max_total_exposure_usdc:

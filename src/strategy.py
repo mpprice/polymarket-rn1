@@ -62,6 +62,7 @@ class Strategy:
         self.odds = OddsClient(config)
         self.risk = RiskManager(config)
         self.tracker = PositionTracker(config)
+        self.risk.sync_from_tracker(self.tracker)
 
         # Optional modules
         self._learning = None
