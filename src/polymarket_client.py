@@ -115,6 +115,20 @@ class PolymarketClient:
             return data[0]
         return data if isinstance(data, dict) and data.get("id") else None
 
+    def get_market_by_slug(self, slug: str) -> Optional[dict]:
+        """Fetch a single market by slug (e.g. 'nba-uta-was-2026-03-05-total-240pt5')."""
+        url = f"{self.config.gamma_url}/markets"
+        try:
+            resp = self._session.get(url, params={"slug": slug}, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list) and data:
+                return data[0]
+            return data if isinstance(data, dict) and data.get("id") else None
+        except Exception as e:
+            log.debug("get_market_by_slug(%s) failed: %s", slug, e)
+            return None
+
     def _parse_market(self, m: dict, sport: str) -> dict:
         """Normalize market data into a standard dict."""
         outcomes = m.get("outcomes", '["Yes","No"]')
@@ -157,6 +171,20 @@ class PolymarketClient:
     def get_midpoint(self, token_id: str) -> float:
         """Get midpoint price."""
         return float(self._clob.get_midpoint(token_id))
+
+    def get_midpoint_unauthenticated(self, token_id: str) -> Optional[float]:
+        """Get midpoint price via public REST API (no CLOB auth needed)."""
+        try:
+            resp = self._session.get(
+                f"{self.config.clob_url}/midpoint",
+                params={"token_id": token_id},
+                timeout=5,
+            )
+            if resp.ok:
+                mid = float(resp.json().get("mid", 0))
+                return mid if mid > 0 else None
+        except Exception:
+            return None
 
     def get_best_price(self, token_id: str, side: str = "BUY") -> float:
         """Get best available price for a side."""

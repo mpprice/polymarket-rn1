@@ -437,6 +437,63 @@ class Strategy:
                         resolution_price=res.get("resolution_price", 0),
                     ))
 
+    def check_early_exits(self):
+        """Check for positions that can be exited early (price near 0 or 1)."""
+        exits = self.tracker.check_early_exits(self.poly)
+        for ex in exits:
+            try:
+                if self.dry_run:
+                    # Paper mode: simulate the sell at midpoint
+                    log.info("EARLY EXIT [paper]: %s [%s] %s | exit=%.4f entry=%.3f "
+                             "shares=%.0f | PnL=$%.2f",
+                             ex["slug"], ex["outcome"], ex["exit_type"],
+                             ex["exit_price"], ex["entry_price"],
+                             ex["shares"], ex["pnl"])
+                else:
+                    # Live mode: place SELL limit order at current midpoint
+                    log.info("EARLY EXIT [live]: %s [%s] %s | selling %.0f shares @ %.4f",
+                             ex["slug"], ex["outcome"], ex["exit_type"],
+                             ex["shares"], ex["exit_price"])
+                    self.poly.place_limit_order(
+                        token_id=ex["token_id"],
+                        price=ex["exit_price"],
+                        size=ex["shares"],
+                        side="SELL",
+                    )
+
+                # Record the exit
+                self.tracker.close_early_exit(
+                    ex["token_id"], ex["exit_price"], ex["payout"])
+                self.risk.record_resolution(
+                    ex["token_id"], ex["payout"], ex["cost_usdc"])
+
+                # Feed to learning agent
+                if self._learning:
+                    pos = self.tracker.positions.get(ex["token_id"])
+                    if pos:
+                        from .learning_agent import TradeOutcome
+                        self._learning.record_outcome(TradeOutcome(
+                            token_id=ex["token_id"],
+                            slug=ex["slug"],
+                            sport=ex.get("sport", ""),
+                            market_type=pos.market_type,
+                            outcome=ex["outcome"],
+                            entry_price=ex["entry_price"],
+                            fair_prob_at_entry=pos.fair_prob,
+                            edge_pct_at_entry=pos.edge_pct,
+                            shares=ex["shares"],
+                            cost_usdc=ex["cost_usdc"],
+                            bookmaker=pos.bookmaker,
+                            opened_at=pos.opened_at,
+                            resolved_at=pos.closed_at,
+                            won=ex["pnl"] > 0,
+                            pnl=ex["pnl"],
+                            resolution_price=ex["exit_price"],
+                        ))
+
+            except Exception as e:
+                log.error("Early exit failed for %s: %s", ex["slug"], e)
+
     def run_loop(self, interval: int = None):
         """Run strategy in a continuous loop."""
         interval = interval or self.config.scan_interval_seconds
@@ -451,8 +508,11 @@ class Strategy:
             try:
                 log.info("--- Cycle %d ---", cycle)
 
-                # Check resolutions first
+                # Check resolutions first (UMA fully resolved)
                 self.check_resolutions()
+
+                # Check early exits (price near 0 or 1, outcome certain)
+                self.check_early_exits()
 
                 # Scan for directional opportunities
                 opps = self.scan()

@@ -26,7 +26,7 @@ class Position:
     cost_usdc: float
     bookmaker: str
     opened_at: str = ""
-    status: str = "open"       # open, won, lost
+    status: str = "open"       # open, won, lost, early_exit
     resolution_price: float = 0.0
     payout: float = 0.0
     pnl: float = 0.0
@@ -122,10 +122,11 @@ class PositionTracker:
                  slug, outcome, shares, entry_price, cost_usdc)
 
     def check_resolutions(self, poly_client) -> list[dict]:
-        """Check open positions for resolution via Polymarket API.
+        """Check open positions for resolution via Polymarket Gamma API.
 
-        For resolved markets, curPrice will be 0 (losing) or ~1 (winning).
-        Redeemable=True means the market has settled.
+        Looks up each position's market by slug, checks if resolved,
+        then matches our outcome against the market's outcomes/prices
+        to determine win/loss.
         """
         resolved = []
         open_positions = [p for p in self.positions.values() if p.status == "open"]
@@ -133,21 +134,55 @@ class PositionTracker:
         if not open_positions:
             return resolved
 
+        # Deduplicate slug lookups (multiple positions can share a slug)
+        slug_cache: dict[str, Optional[dict]] = {}
+
         for pos in open_positions:
             try:
-                market = poly_client.get_market_by_condition(
-                    pos.token_id.split("_")[0] if "_" in pos.token_id else ""
-                )
+                slug = pos.slug
+                if slug not in slug_cache:
+                    slug_cache[slug] = poly_client.get_market_by_slug(slug)
+                market = slug_cache[slug]
                 if not market:
                     continue
 
-                # Check if market is resolved
-                if not market.get("resolved", False):
+                # Check if market is resolved (Gamma uses umaResolutionStatus or closed+outcomePrices)
+                uma_status = market.get("umaResolutionStatus", "")
+                if uma_status != "resolved":
                     continue
 
-                # Determine resolution
-                cur_price = float(market.get("outcomePrices", "[0,0]").strip("[]").split(",")[0])
-                won = cur_price > 0.5
+                # Parse outcomes and prices
+                outcomes_raw = market.get("outcomes", "[]")
+                prices_raw = market.get("outcomePrices", "[]")
+                if isinstance(outcomes_raw, str):
+                    outcomes_raw = json.loads(outcomes_raw)
+                if isinstance(prices_raw, str):
+                    prices_raw = json.loads(prices_raw)
+
+                # Match our position's outcome to the market's outcome list
+                # to find the resolution price for our specific side
+                our_price = None
+                for i, outcome_name in enumerate(outcomes_raw):
+                    if i < len(prices_raw) and outcome_name == pos.outcome:
+                        our_price = float(prices_raw[i])
+                        break
+
+                if our_price is None:
+                    # Fallback: match by token_id against clobTokenIds
+                    token_ids_raw = market.get("clobTokenIds", "[]")
+                    if isinstance(token_ids_raw, str):
+                        token_ids_raw = json.loads(token_ids_raw)
+                    for i, tid in enumerate(token_ids_raw):
+                        if tid == pos.token_id and i < len(prices_raw):
+                            our_price = float(prices_raw[i])
+                            break
+
+                if our_price is None:
+                    log.warning("Could not match outcome '%s' in resolved market %s "
+                                "(outcomes=%s)", pos.outcome, slug, outcomes_raw)
+                    continue
+
+                won = our_price > 0.5
 
                 if won:
                     payout = pos.shares * 1.0  # $1 per share
@@ -158,7 +193,7 @@ class PositionTracker:
 
                 # Update position
                 pos.status = "won" if won else "lost"
-                pos.resolution_price = cur_price
+                pos.resolution_price = our_price
                 pos.payout = payout
                 pos.pnl = pnl
                 pos.closed_at = datetime.now(timezone.utc).isoformat()
@@ -174,6 +209,7 @@ class PositionTracker:
                     "shares": pos.shares,
                     "payout": payout,
                     "pnl": pnl,
+                    "resolution_price": our_price,
                 })
 
             except Exception as e:
@@ -183,6 +219,83 @@ class PositionTracker:
             self.save()
 
         return resolved
+
+    def check_early_exits(self, poly_client,
+                          win_threshold: float = 0.990,
+                          loss_threshold: float = 0.002) -> list[dict]:
+        """Check if any open positions can be exited early based on price.
+
+        When price is near 1.0 (winner) or near 0.0 (loser), the outcome
+        is essentially certain but UMA resolution takes 2-3h. Selling now
+        frees capital immediately at ~99% of final value.
+
+        Args:
+            poly_client: PolymarketClient instance
+            win_threshold: Sell if current price >= this (default 0.990)
+            loss_threshold: Sell if current price <= this (default 0.002)
+
+        Returns:
+            List of early exit dicts with position details and exit price.
+        """
+        exits = []
+        open_positions = [p for p in self.positions.values() if p.status == "open"]
+
+        if not open_positions:
+            return exits
+
+        for pos in open_positions:
+            try:
+                mid = poly_client.get_midpoint_unauthenticated(pos.token_id)
+                if mid is None:
+                    continue
+
+                exit_type = None
+                if mid >= win_threshold:
+                    exit_type = "early_win"
+                elif mid <= loss_threshold:
+                    exit_type = "early_loss"
+
+                if not exit_type:
+                    continue
+
+                # Calculate exit P&L
+                exit_price = mid
+                payout = pos.shares * exit_price
+                pnl = payout - pos.cost_usdc
+
+                exits.append({
+                    "token_id": pos.token_id,
+                    "slug": pos.slug,
+                    "outcome": pos.outcome,
+                    "sport": pos.sport,
+                    "exit_type": exit_type,
+                    "entry_price": pos.entry_price,
+                    "exit_price": exit_price,
+                    "shares": pos.shares,
+                    "cost_usdc": pos.cost_usdc,
+                    "payout": payout,
+                    "pnl": pnl,
+                })
+
+            except Exception as e:
+                log.debug("Early exit check failed for %s: %s", pos.slug, e)
+
+        return exits
+
+    def close_early_exit(self, token_id: str, exit_price: float, payout: float):
+        """Mark a position as early-exited."""
+        pos = self.positions.get(token_id)
+        if not pos or pos.status != "open":
+            return
+
+        pos.status = "won" if payout > pos.cost_usdc else "lost"
+        pos.resolution_price = exit_price
+        pos.payout = payout
+        pos.pnl = payout - pos.cost_usdc
+        pos.closed_at = datetime.now(timezone.utc).isoformat()
+
+        self._append_trade("EARLY_EXIT", pos)
+        self.save()
 
     def _append_trade(self, trade_type: str, pos: Position):
         """Append a trade record to the trades CSV."""
