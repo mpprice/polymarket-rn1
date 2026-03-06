@@ -2433,6 +2433,7 @@ async function refreshAll() {
       activeEl.innerHTML = '<div class="empty">No active markets in last 15 minutes</div>';
     }
   }
+  }
   } catch(e) { console.error('Charts/tables/RN1 error:', e); }
 }
 
