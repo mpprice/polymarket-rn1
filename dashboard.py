@@ -1659,84 +1659,103 @@ function destroyChart(chart) { if (chart) chart.destroy(); return null; }
 
 // --- Main refresh ---
 async function refreshAll() {
-  const [summary, positions, resolved, log, sports, mtypes, learning,
-         pnlSeries, dailyPnl, edgeDist, calibration, stats, activity, heatmap, rn1, rn1live] =
-    await Promise.all([
-      fetchJSON('/api/summary'),
-      fetchJSON('/api/positions'),
-      fetchJSON('/api/resolved'),
-      fetchJSON('/api/log'),
-      fetchJSON('/api/sports'),
-      fetchJSON('/api/market_types'),
-      fetchJSON('/api/learning'),
-      fetchJSON('/api/pnl_series'),
-      fetchJSON('/api/daily_pnl'),
-      fetchJSON('/api/edge_distribution'),
-      fetchJSON('/api/calibration'),
-      fetchJSON('/api/stats'),
-      fetchJSON('/api/activity'),
-      fetchJSON('/api/sport_heatmap'),
-      fetchJSON('/api/rn1'),
-      fetchJSON('/api/rn1_live'),
-    ]);
+  let summary=null, positions=null, resolved=null, log=null, sports=null, mtypes=null, learning=null,
+      pnlSeries=null, dailyPnl=null, edgeDist=null, calibration=null, stats=null, activity=null,
+      heatmap=null, rn1=null, rn1live=null;
+  try {
+    [summary, positions, resolved, log, sports, mtypes, learning,
+     pnlSeries, dailyPnl, edgeDist, calibration, stats, activity, heatmap, rn1, rn1live] =
+      await Promise.all([
+        fetchJSON('/api/summary'),
+        fetchJSON('/api/positions'),
+        fetchJSON('/api/resolved'),
+        fetchJSON('/api/log'),
+        fetchJSON('/api/sports'),
+        fetchJSON('/api/market_types'),
+        fetchJSON('/api/learning'),
+        fetchJSON('/api/pnl_series'),
+        fetchJSON('/api/daily_pnl'),
+        fetchJSON('/api/edge_distribution'),
+        fetchJSON('/api/calibration'),
+        fetchJSON('/api/stats'),
+        fetchJSON('/api/activity'),
+        fetchJSON('/api/sport_heatmap'),
+        fetchJSON('/api/rn1'),
+        fetchJSON('/api/rn1_live'),
+      ]);
+  } catch(e) { console.error('Promise.all failed:', e); }
 
   lastUpdated = Date.now();
 
-  // === Summary Cards ===
+  // === Traffic Lights (first — must always render) ===
+  try {
   if (summary) {
-    const pnlEl = document.getElementById('card-pnl');
-    pnlEl.textContent = fmt$(summary.total_pnl);
-    pnlEl.className = 'card-value ' + pnlClass(summary.total_pnl);
-    document.getElementById('card-wl').textContent = summary.wins + 'W / ' + summary.losses + 'L';
-    document.getElementById('card-wr').textContent = summary.win_rate + '%';
-    document.getElementById('card-open').textContent = summary.open_count;
-    document.getElementById('card-exposure').textContent = '$' + summary.total_exposure.toFixed(2);
-    document.getElementById('card-trades').textContent = summary.total_trades;
-    document.getElementById('utc-time').textContent = summary.utc_now;
-
-    // === Traffic Lights ===
     // Bot status
     const tlBotDot = document.querySelector('#tl-bot .tl-dot');
     const tlBotDetail = document.getElementById('tl-bot-detail');
-    if (summary.bot_status === 'Running') {
-      tlBotDot.className = 'tl-dot tl-green';
-      tlBotDetail.textContent = 'Running';
-    } else {
-      tlBotDot.className = 'tl-dot tl-red';
-      tlBotDetail.textContent = 'Stopped';
+    if (tlBotDot && tlBotDetail) {
+      if (summary.bot_status === 'Running') {
+        tlBotDot.className = 'tl-dot tl-green';
+        tlBotDetail.textContent = 'Running';
+      } else {
+        tlBotDot.className = 'tl-dot tl-red';
+        tlBotDetail.textContent = 'Stopped';
+      }
     }
 
     // Trading mode
     const tlModeDot = document.querySelector('#tl-mode .tl-dot');
     const tlModeDetail = document.getElementById('tl-mode-detail');
-    if (summary.live_trading) {
-      tlModeDot.className = 'tl-dot tl-green';
-      tlModeDetail.textContent = 'LIVE';
-      tlModeDetail.style.color = 'var(--green)';
-      tlModeDetail.style.fontWeight = '700';
-    } else {
-      tlModeDot.className = 'tl-dot tl-yellow';
-      tlModeDetail.textContent = 'Paper';
-      tlModeDetail.style.color = 'var(--yellow)';
-      tlModeDetail.style.fontWeight = '600';
+    if (tlModeDot && tlModeDetail) {
+      if (summary.live_trading) {
+        tlModeDot.className = 'tl-dot tl-green';
+        tlModeDetail.textContent = 'LIVE';
+        tlModeDetail.style.color = 'var(--green)';
+        tlModeDetail.style.fontWeight = '700';
+      } else {
+        tlModeDot.className = 'tl-dot tl-yellow';
+        tlModeDetail.textContent = 'Paper';
+        tlModeDetail.style.color = 'var(--yellow)';
+        tlModeDetail.style.fontWeight = '600';
+      }
     }
 
     // RN1 tracker
     const tlRn1Dot = document.querySelector('#tl-rn1 .tl-dot');
     const tlRn1Detail = document.getElementById('tl-rn1-detail');
-    if (summary.rn1_tracker && summary.rn1_tracker.alive) {
-      tlRn1Dot.className = 'tl-dot tl-green';
-      const ago = summary.rn1_tracker.last_poll_ago;
-      const mkts = summary.rn1_tracker.active_markets;
-      const t5 = summary.rn1_tracker.trades_last_5m;
-      tlRn1Detail.textContent = ago + 's ago | ' + mkts + ' mkts | ' + t5 + ' trades/5m';
-    } else {
-      tlRn1Dot.className = 'tl-dot tl-red';
-      tlRn1Detail.textContent = 'Offline';
+    if (tlRn1Dot && tlRn1Detail) {
+      if (summary.rn1_tracker && summary.rn1_tracker.alive) {
+        tlRn1Dot.className = 'tl-dot tl-green';
+        const ago = summary.rn1_tracker.last_poll_ago;
+        const mkts = summary.rn1_tracker.active_markets || 0;
+        const t5 = summary.rn1_tracker.trades_last_5m || 0;
+        tlRn1Detail.textContent = ago + 's ago | ' + mkts + ' mkts | ' + t5 + ' trades/5m';
+      } else {
+        tlRn1Dot.className = 'tl-dot tl-red';
+        const ago = summary.rn1_tracker ? summary.rn1_tracker.last_poll_ago : null;
+        tlRn1Detail.textContent = ago ? 'Offline (last seen ' + ago + 's ago)' : 'Offline';
+      }
     }
   }
+  } catch(e) { console.error('Traffic lights error:', e); }
+
+  // === Summary Cards ===
+  try {
+  if (summary) {
+    const pnlEl = document.getElementById('card-pnl');
+    pnlEl.textContent = fmt$(summary.total_pnl || 0);
+    pnlEl.className = 'card-value ' + pnlClass(summary.total_pnl || 0);
+    document.getElementById('card-wl').textContent = (summary.wins||0) + 'W / ' + (summary.losses||0) + 'L';
+    document.getElementById('card-wr').textContent = (summary.win_rate||0) + '%';
+    document.getElementById('card-open').textContent = summary.open_count || 0;
+    document.getElementById('card-exposure').textContent = '$' + (summary.total_exposure||0).toFixed(2);
+    document.getElementById('card-trades').textContent = summary.total_trades || 0;
+    document.getElementById('utc-time').textContent = summary.utc_now || '';
+  }
+  } catch(e) { console.error('Summary cards error:', e); }
 
   // === Extended Stats ===
+  try {
   if (stats) {
     const sharpeEl = document.getElementById('card-sharpe');
     sharpeEl.textContent = stats.total_resolved > 0 ? stats.sharpe.toFixed(2) : '--';
@@ -1781,10 +1800,12 @@ async function refreshAll() {
       worstSub.innerHTML = stats.worst_trade.slug ?
         `<a href="${stats.worst_trade.url}" target="_blank" class="pm-link">${shortSlug(stats.worst_trade.slug)}</a>` : '';
     }
-    document.getElementById('stat-deployed').textContent = '$' + stats.total_capital_deployed.toFixed(2);
+    document.getElementById('stat-deployed').textContent = '$' + (stats.total_capital_deployed||0).toFixed(2);
   }
+  } catch(e) { console.error('Stats section error:', e); }
 
   // === Open Positions ===
+  try {
   if (positions) {
     const tbody = document.getElementById('open-tbody');
     const empty = document.getElementById('open-empty');
@@ -1809,8 +1830,10 @@ async function refreshAll() {
       </tr>`).join('');
     }
   }
+  } catch(e) { console.error('Positions error:', e); }
 
   // === Resolved Positions ===
+  try {
   if (resolved) {
     const tbody = document.getElementById('resolved-tbody');
     const empty = document.getElementById('resolved-empty');
@@ -1839,8 +1862,10 @@ async function refreshAll() {
       }).join('');
     }
   }
+  } catch(e) { console.error('Resolved error:', e); }
 
-  // === Activity Feed ===
+  // === Activity Feed + Charts + Tables ===
+  try {
   if (activity && activity.length > 0) {
     const feed = document.getElementById('activity-feed');
     const icons = { open: '&#9654;', won: '&#10003;', lost: '&#10007;', merge: '&#8644;', other: '&#9679;' };
@@ -2387,6 +2412,7 @@ if (rn1live) {
       activeEl.innerHTML = '<div class="empty">No active markets in last 15 minutes</div>';
     }
   }
+  } catch(e) { console.error('Charts/tables/RN1 error:', e); }
 }
 
 // Update "last updated" counter
