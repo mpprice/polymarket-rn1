@@ -188,6 +188,9 @@ def generate():
         "8. Statistical Edge Validation",
         "9. Live Performance Test Metrics",
         "10. Summary of Edge Sources",
+        "11. Market Matching Architecture",
+        "12. Paper Trading Results (March 2026)",
+        "13. Testing & Validation Framework",
         "References",
     ]
     for item in toc_items:
@@ -216,8 +219,8 @@ def generate():
         "arbitrage."
     ))
     add_body(doc, (
-        "The system targets 3-15% edge per trade in the 5-40c price range, uses quarter-Kelly "
-        "sizing ($500 test bankroll, $25 max position), and holds positions to resolution. "
+        "The system targets 3-15% edge per trade in the 5-95c price range, uses fractional Kelly "
+        "sizing ($500 test bankroll, $8 max position), and holds positions to resolution. "
         "Six independent edge sources provide robustness against any single source diminishing."
     ))
 
@@ -227,14 +230,16 @@ def generate():
         ["Parameter", "Value", "Rationale"],
         [
             ["Bankroll", "$500", "Test wallet on Polygon"],
-            ["Max Position", "$25 (5%)", "Conservative single-name limit"],
-            ["Max Exposure", "$300 (60%)", "Prevents full drawdown"],
-            ["Kelly Fraction", "0.25 (quarter)", "56% growth, 25% variance"],
-            ["Min Edge", "3%", "Below this, costs dominate"],
-            ["Max Edge", "25%", "Above this, likely matching error"],
-            ["Price Range", "3c - 50c", "Highest mispricing zone (RN1 data)"],
-            ["Max Time to Event", "5 days", "Avoid capital lockup"],
+            ["Max Position", "$8 (1.6%)", "Small size for statistical learning phase"],
+            ["Max Exposure", "$400 (80%)", "Maximise capital deployment"],
+            ["Kelly Fraction", "0.15 (fractional)", "Conservative: 15% of full Kelly"],
+            ["Min Edge", "3%", "Below this, transaction costs dominate"],
+            ["Max Edge", "20%", "Above this, likely matching error"],
+            ["Price Range", "5c - 95c", "Full range for h2h/spread/total markets"],
+            ["Max Time to Event", "10 days", "Balance capital lockup vs coverage"],
+            ["Min Liquidity", "$100", "Ensures reliable midpoint pricing"],
             ["Scan Interval", "300 seconds", "Balance API cost vs opportunity capture"],
+            ["Target Sports", "26", "EPL, NBA, NFL, NHL, CBB, ATP, WTA, etc."],
         ],
         col_aligns=["left", "center", "left"],
     )
@@ -332,8 +337,10 @@ def generate():
     add_formula(doc, "edge_pct = 100 * edge / P_polymarket")
     add_body(doc, (
         "The edge represents the percentage by which Polymarket underprices an outcome "
-        "relative to sharp-book fair value. Filters: min 3%, max 25%, price 3-50c, "
-        "exact line match for spreads/totals, max 5 days to event."
+        "relative to sharp-book fair value. Filters: min 3%, max 20%, price 5-95c, "
+        "exact line match for spreads/totals (0.01 tolerance), max 10 days to event, "
+        "min $100 liquidity. Exotic sub-markets (first-set, set-handicap, corners, etc.) "
+        "are excluded to prevent phantom edges from cross-market-type comparison."
     ))
 
     add_heading(doc, "4.2 Confidence Scoring", level=2)
@@ -393,10 +400,11 @@ def generate():
     add_body(doc, "This reduces position size when the edge estimate has high variance.")
 
     add_heading(doc, "5.4 Position Constraints", level=2)
-    add_formula(doc, "size = min(f_used * bankroll, $25)")
-    add_bullet(doc, " total_exposure / bankroll", bold_prefix="Max exposure:")
-    add_bullet(doc, " $2 minimum (gas cost floor)", bold_prefix="Min trade:")
-    add_bullet(doc, " No opposing sides of same event", bold_prefix="Conflict check:")
+    add_formula(doc, "size = max($0.50, min(f_used * bankroll, $8))")
+    add_bullet(doc, " $400 = 80% of $500 bankroll", bold_prefix="Max exposure:")
+    add_bullet(doc, " $0.50 minimum (fractional Kelly floor)", bold_prefix="Min trade:")
+    add_bullet(doc, " No opposing sides of same event (over+under, yes+no)", bold_prefix="Conflict check:")
+    add_bullet(doc, " No duplicate positions on same token", bold_prefix="Duplicate check:")
     add_bullet(doc, " effective_bankroll = initial + realized_pnl", bold_prefix="Dynamic bankroll:")
 
     # ── 6. Merge Arbitrage ──────────────────────────────────────────
@@ -587,6 +595,170 @@ def generate():
         "The combination of multiple independent edge sources provides robustness: "
         "even if one source diminishes (e.g., more market makers enter Polymarket), "
         "others persist due to structural protocol constraints."
+    ))
+
+    # ── 11. Market Matching Architecture ─────────────────────────────
+    doc.add_page_break()
+    add_heading(doc, "11. Market Matching Architecture", level=1)
+
+    add_body(doc, (
+        "The matcher is the critical pipeline stage that links Polymarket slug-based markets "
+        "to structured odds from The Odds API. Coverage directly determines the opportunity set."
+    ))
+
+    add_heading(doc, "11.1 Matching Pipeline", level=2)
+    add_body(doc, (
+        "For each Polymarket market, the matcher: (1) extracts sport, teams, and date from the "
+        "slug, (2) classifies market type (h2h, spread, total, exotic), (3) finds candidate "
+        "Odds API events within a 96-hour date window, (4) performs strict team name matching, "
+        "(5) for spreads/totals, requires exact line match (0.01 tolerance)."
+    ))
+
+    add_heading(doc, "11.2 Team Name Resolution", level=2)
+    add_table(doc,
+        ["Method", "Scope", "Example"],
+        [
+            ["TEAM_ALIASES dict", "136 teams (NBA, NFL, EPL, etc.)", "lakers -> Los Angeles Lakers"],
+            ["Sport-scoped abbrevs", "32 NHL + 20 CBB teams", "(nhl, edm) -> Edmonton Oilers"],
+            ["Tennis surname match", "All ATP/WTA dynamically", "slug 'djokovic' -> 'Novak Djokovic'"],
+            ["Fuzzy matching (0.80)", "Fallback for partial matches", "man-utd -> Manchester United"],
+        ],
+        col_aligns=["left", "left", "left"],
+    )
+
+    add_heading(doc, "11.3 Exotic Market Filtering", level=2)
+    add_body(doc, (
+        "Sub-markets like first-set-winner, set-handicap, set-totals, match-total, corners, "
+        "and tiebreak markets are filtered BEFORE market type classification. Without this, "
+        "their prices get compared to match-winner odds, creating phantom edges of 10-65%. "
+        "This was a critical bug fix: the exotic check must run before spread/total detection "
+        "because patterns like '-corners-over-' contain '-over-' which triggers total classification."
+    ))
+
+    add_heading(doc, "11.4 Coverage Metrics", level=2)
+    add_table(doc,
+        ["Metric", "Before (Mar 5)", "After (Mar 6)", "Improvement"],
+        [
+            ["Configured sports", "22", "26", "+4 (NHL, CBB, CFB, Eredivisie)"],
+            ["Team aliases", "136", "188+", "+52 NHL/CBB + dynamic tennis"],
+            ["Date match window", "48 hours", "96 hours", "2x wider"],
+            ["Polymarket fetch limit", "100/sport", "200/sport", "2x coverage"],
+            ["Matched markets/scan", "44", "96", "+118%"],
+            ["Trades placed/scan", "0-13", "43-87", "6-7x increase"],
+        ],
+        col_aligns=["left", "center", "center", "center"],
+    )
+
+    # ── 12. Paper Trading Results ──────────────────────────────────
+    doc.add_page_break()
+    add_heading(doc, "12. Paper Trading Results (March 2026)", level=1)
+
+    add_heading(doc, "12.1 Phase 1: Initial Deployment (March 5)", level=2)
+    add_body(doc, (
+        "Initial deployment with 22 sports, 136 team aliases, 48h date window. "
+        "Matched 44 markets per scan, placed 62 positions over ~12 hours."
+    ))
+    add_table(doc,
+        ["Metric", "Value"],
+        [
+            ["Positions opened", "62"],
+            ["Resolved (NBA)", "15 (7W / 8L)"],
+            ["Realized P&L", "-$15.34"],
+            ["Win rate", "46.7% (expected ~50%)"],
+            ["Avg position size", "$4.50"],
+        ],
+        col_aligns=["left", "center"],
+    )
+    add_body(doc, (
+        "Key finding: contradictory position bug caused guaranteed losses (bought both Over+Under "
+        "on same game totals). Four contradictory pairs identified, contributing -$14 to losses."
+    ))
+
+    add_heading(doc, "12.2 Phase 2: Expanded Coverage (March 6)", level=2)
+    add_body(doc, (
+        "After recalibration: 26 sports, sport-scoped abbreviations, dynamic tennis matching, "
+        "exotic market filtering, 96h date window. Matched 96 markets, placed 87 trades in 2.7 hours."
+    ))
+    add_table(doc,
+        ["Metric", "Value"],
+        [
+            ["Positions opened", "87 (all on Mar 6)"],
+            ["Sports covered", "6+ (EPL, Bundesliga, La Liga, NBA, NHL, ATP, WTA)"],
+            ["Total exposure", "$331 of $400 max (83%)"],
+            ["Avg position size", "$3.76"],
+            ["Position range", "$0.53 - $8.00"],
+            ["Avg edge at entry", "~6.2%"],
+            ["Fill rate (steady state)", "$30/hr, 13 trades/hr"],
+            ["Unrealized MTM P&L", "+$2.63 (86/87 priced)"],
+            ["Resolved trades", "0 (events pending)"],
+        ],
+        col_aligns=["left", "center"],
+    )
+
+    add_heading(doc, "12.3 Bugs Found During Paper Trading", level=2)
+    add_table(doc,
+        ["Bug", "Impact", "Fix"],
+        [
+            ["Spread/total tolerance 1.0/0.5", "Matched wrong lines, 30-82% phantom edges",
+             "Changed to 0.01 (exact match)"],
+            ["No contradictory position check", "Bought Over+Under on same game",
+             "Added _has_conflicting_position()"],
+            ["Risk manager reset on restart", "Exceeded $300 limit, opened $694",
+             "Added sync_from_tracker()"],
+            ["Sport-agnostic abbreviations", "det=Pistons/Lions/Red Wings collisions",
+             "Sport-scoped _SPORT_ABBREV dict"],
+            ["Tennis date mismatch", "end_date=tournament end, not match date",
+             "Extract date from slug for tennis"],
+            ["Exotic markets as h2h/total", "First-set-winner priced vs match odds",
+             "Exotic filter before type classification"],
+            ["Corners-over as total", "-corners-over- matched -over- pattern",
+             "Moved exotic check before totals check"],
+        ],
+        col_aligns=["left", "left", "left"],
+    )
+
+    add_heading(doc, "12.4 Next Steps", level=2)
+    add_bullet(doc, " Wait for event resolutions (88 open positions)", bold_prefix="Immediate:")
+    add_bullet(doc, " Validate CLV, win rate vs expected, Brier score at n=30+", bold_prefix="M1 (30 trades):")
+    add_bullet(doc, " Binomial + t-test significance at n=100", bold_prefix="M2 (100 trades):")
+    add_bullet(doc, " If CLV > +2% and flat-bet ROI > +3%, transition to live ($100 wallet)", bold_prefix="Live decision:")
+    add_bullet(doc, " Esports coverage (PandaScore), more bookmakers, closing line capture", bold_prefix="Future:")
+
+    # ── 13. Testing & Validation Framework ─────────────────────────
+    add_heading(doc, "13. Testing & Validation Framework", level=1)
+
+    add_body(doc, (
+        "A comprehensive testing framework validates both code correctness and trading outcome quality. "
+        "319 automated tests run in 3.7 seconds across 7 test modules."
+    ))
+
+    add_heading(doc, "13.1 Unit Test Coverage", level=2)
+    add_table(doc,
+        ["Module", "Tests", "Key Coverage"],
+        [
+            ["test_matcher.py", "142", "Team matching, tennis surnames, exotic filtering, dates, NHL/CBB abbrevs"],
+            ["test_strategy.py", "24", "Edge evaluation, position sizing, conflict detection, exposure limits"],
+            ["test_risk_manager.py", "26", "Exposure tracking, state persistence, limit enforcement"],
+            ["test_config.py", "31", "Env loading, sport config, defaults"],
+            ["test_odds_client.py", "24", "API mapping, sport keys, rate limiting"],
+            ["test_polymarket_client.py", "14", "Fetch limits, market parsing"],
+            ["test_trading_validation.py", "42", "Edge calibration, phantom detection, risk checks"],
+            ["Total", "319", "3.7s execution time"],
+        ],
+        col_aligns=["left", "center", "left"],
+    )
+
+    add_heading(doc, "13.2 Trade Validator (Live Monitoring)", level=2)
+    add_body(doc, (
+        "The trade_validator.py module runs against live paper trading data to detect: "
+        "(1) phantom edges from matching errors (exotic slug patterns, short tennis names), "
+        "(2) risk limit violations (position size, exposure, contradictory positions), "
+        "(3) edge calibration (Brier score, edge-bucket win rates), "
+        "(4) capital efficiency (days to resolution, stale positions)."
+    ))
+    add_body(doc, (
+        "Critical alerts are raised when: edge calibration shows systematic overestimation, "
+        "phantom slug patterns account for >10% of exposure, or risk limits are breached."
     ))
 
     # ── References ──────────────────────────────────────────────────

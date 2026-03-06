@@ -839,11 +839,11 @@ def api_activity():
     open_pos.sort(key=lambda p: p.get("opened_at", ""), reverse=True)
 
     # Fetch midpoints for MTM on open positions
-    token_ids = [p.get("token_id", "") for p in open_pos[:20] if p.get("token_id")]
+    token_ids = [p.get("token_id", "") for p in open_pos if p.get("token_id")]
     midpoints = _fetch_midpoints(token_ids) if token_ids else {}
 
     opened = []
-    for p in open_pos[:20]:
+    for p in open_pos:
         slug = p.get("slug", "")
         days = _days_left(slug)
         tid = p.get("token_id", "")
@@ -874,7 +874,7 @@ def api_activity():
     resolved_pos.sort(key=lambda p: p.get("closed_at", ""), reverse=True)
 
     resolved = []
-    for p in resolved_pos[:20]:
+    for p in resolved_pos:
         slug = p.get("slug", "")
         won = p.get("status", "").lower() == "won"
         pnl = _safe_float(p.get("pnl"))
@@ -1568,12 +1568,22 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <!-- Recently Opened -->
     <div class="section">
       <h2>Recently Opened <span id="opened-count" style="color:var(--text-muted);font-size:14px;"></span></h2>
+      <input type="text" id="opened-search" placeholder="Search open positions..." style="width:100%;max-width:400px;padding:6px 10px;margin-bottom:8px;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;" oninput="filterTable('opened-table','opened-search')">
       <div style="overflow-x:auto;">
         <table class="data-table" id="opened-table">
           <thead><tr>
-            <th>Slug</th><th>Outcome</th><th>Sport</th><th>Type</th>
-            <th>Entry</th><th>Current</th><th>Edge</th><th>Shares</th><th>Cost</th>
-            <th>MTM P&amp;L</th><th>Days Left</th><th>Opened</th>
+            <th onclick="sortActivity('opened-table',0)" style="cursor:pointer;">Slug <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',1)" style="cursor:pointer;">Outcome <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',2)" style="cursor:pointer;">Sport <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',3)" style="cursor:pointer;">Type <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',4)" style="cursor:pointer;">Entry <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',5)" style="cursor:pointer;">Current <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',6)" style="cursor:pointer;">Edge <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',7)" style="cursor:pointer;">Shares <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',8)" style="cursor:pointer;">Cost <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',9)" style="cursor:pointer;">MTM P&amp;L <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',10)" style="cursor:pointer;">Days Left <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('opened-table',11)" style="cursor:pointer;">Opened <span class="sort-arrow">&#9650;&#9660;</span></th>
           </tr></thead>
           <tbody id="opened-tbody"></tbody>
         </table>
@@ -1584,12 +1594,20 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <!-- Recently Resolved -->
     <div class="section">
       <h2>Recently Resolved <span id="resolved-count2" style="color:var(--text-muted);font-size:14px;"></span></h2>
+      <input type="text" id="resolved-search" placeholder="Search resolved trades..." style="width:100%;max-width:400px;padding:6px 10px;margin-bottom:8px;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;" oninput="filterTable('resolved-table2','resolved-search')">
       <div style="overflow-x:auto;">
         <table class="data-table" id="resolved-table2">
           <thead><tr>
-            <th>Slug</th><th>Outcome</th><th>Sport</th><th>Type</th>
-            <th>Entry</th><th>Edge</th><th>Cost</th>
-            <th>P&amp;L</th><th>Result</th><th>Resolved</th>
+            <th onclick="sortActivity('resolved-table2',0)" style="cursor:pointer;">Slug <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',1)" style="cursor:pointer;">Outcome <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',2)" style="cursor:pointer;">Sport <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',3)" style="cursor:pointer;">Type <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',4)" style="cursor:pointer;">Entry <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',5)" style="cursor:pointer;">Edge <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',6)" style="cursor:pointer;">Cost <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',7)" style="cursor:pointer;">P&amp;L <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',8)" style="cursor:pointer;">Result <span class="sort-arrow">&#9650;&#9660;</span></th>
+            <th onclick="sortActivity('resolved-table2',9)" style="cursor:pointer;">Resolved <span class="sort-arrow">&#9650;&#9660;</span></th>
           </tr></thead>
           <tbody id="resolved-tbody2"></tbody>
         </table>
@@ -1998,6 +2016,70 @@ function sortTable(tableId, colIdx) {
   rows.forEach(r => tbody.appendChild(r));
 }
 
+// --- Toggle date group collapse ---
+function toggleDateGroup(btn) {
+  const dateKey = btn.getAttribute('data-date');
+  const tableId = btn.getAttribute('data-table');
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = tbody.querySelectorAll('tr[data-date="' + dateKey + '"]');
+  const collapsed = btn.getAttribute('data-collapsed') === '1';
+  rows.forEach(r => r.style.display = collapsed ? '' : 'none');
+  btn.setAttribute('data-collapsed', collapsed ? '0' : '1');
+  btn.textContent = collapsed ? '\u25BC' : '\u25B6';
+}
+
+// --- Sort activity tables (skips group header + total rows) ---
+function sortActivity(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  // Separate: total row (first), date headers, data rows
+  const totalRow = allRows.length > 0 && allRows[0].querySelector('td')?.textContent?.startsWith('TOTAL') ? allRows[0] : null;
+  const dateRows = allRows.filter(r => r.classList.contains('date-group-header'));
+  const dataRows = allRows.filter(r => !r.classList.contains('date-group-header') && r !== totalRow);
+
+  if (dataRows.length === 0) return;
+  const key = tableId + '-act-' + colIdx;
+  const asc = sortState[key] === 'asc' ? 'desc' : 'asc';
+  sortState[key] = asc;
+
+  dataRows.sort((a, b) => {
+    let va = a.cells[colIdx]?.textContent?.trim() || '';
+    let vb = b.cells[colIdx]?.textContent?.trim() || '';
+    const na = parseFloat(va.replace(/[$%+,]/g, ''));
+    const nb = parseFloat(vb.replace(/[$%+,]/g, ''));
+    if (!isNaN(na) && !isNaN(nb)) return asc === 'asc' ? na - nb : nb - na;
+    return asc === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+
+  // Re-append: total first, then sorted data rows (no date headers when sorting)
+  tbody.innerHTML = '';
+  if (totalRow) tbody.appendChild(totalRow);
+  dateRows.forEach(r => r.style.display = 'none');
+  dateRows.forEach(r => tbody.appendChild(r));
+  dataRows.forEach(r => { r.style.display = ''; tbody.appendChild(r); });
+}
+
+// --- Filter/search table rows ---
+function filterTable(tableId, inputId) {
+  const q = document.getElementById(inputId).value.toLowerCase();
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(r => {
+    if (r.classList.contains('date-group-header') || r.querySelector('td')?.textContent?.startsWith('TOTAL')) {
+      r.style.display = q ? 'none' : '';
+      return;
+    }
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
 // --- Destroy chart helper ---
 function destroyChart(chart) { if (chart) chart.destroy(); return null; }
 
@@ -2321,7 +2403,7 @@ async function refreshAll() {
     document.getElementById('opened-count').textContent = openedList.length > 0 ? '(' + openedList.length + ')' : '';
     if (openedList.length > 0) {
       openedEmpty.style.display = 'none';
-      // Sum row at top
+      // Grand total row
       const oTotCost = openedList.reduce((s,o) => s + o.cost_usdc, 0);
       const oTotMtm = openedList.reduce((s,o) => s + (o.mtm_pnl !== null && o.mtm_pnl !== undefined ? o.mtm_pnl : 0), 0);
       const oAvgEdge = openedList.reduce((s,o) => s + o.edge_pct, 0) / openedList.length;
@@ -2334,26 +2416,48 @@ async function refreshAll() {
         <td class="${pnlClass(oTotMtm)}" style="font-weight:700;">${fmt$(oTotMtm)}</td>
         <td></td><td></td>
       </tr>`;
-      oHtml += openedList.map(o => {
-        const daysStr = o.days_left !== null ? (o.days_left <= 0 ? '<span style="color:var(--green);">Today</span>' : o.days_left <= 1 ? '<span style="color:var(--yellow);">' + o.days_left + 'd</span>' : o.days_left + 'd') : '?';
-        const hasMtm = o.current_price !== null && o.current_price !== undefined;
-        const curStr = hasMtm ? o.current_price.toFixed(3) : '--';
-        const mtmStr = hasMtm ? `<span class="${pnlClass(o.mtm_pnl)}" style="font-weight:600;">${fmt$(o.mtm_pnl)}</span>` : '--';
-        return `<tr>
-          <td class="slug-col"><a href="${o.url}" target="_blank" class="pm-link" title="${o.slug}">${shortSlug(o.slug)}</a></td>
-          <td>${o.outcome}</td>
-          <td>${o.sport}</td>
-          <td>${o.market_type}</td>
-          <td class="mono">${o.entry_price.toFixed(3)}</td>
-          <td class="mono">${curStr}</td>
-          <td class="${edgeClass(o.edge_pct)}">${o.edge_pct}%</td>
-          <td class="mono">${o.shares}</td>
-          <td class="mono">$${o.cost_usdc.toFixed(2)}</td>
-          <td>${mtmStr}</td>
-          <td>${daysStr}</td>
-          <td class="mono" style="font-size:11px;">${shortTime(o.opened_at)}</td>
+      // Group by date
+      const dateGroups = {};
+      openedList.forEach(o => {
+        const d = (o.opened_at || '').substring(0, 10) || 'Unknown';
+        if (!dateGroups[d]) dateGroups[d] = [];
+        dateGroups[d].push(o);
+      });
+      const sortedDates = Object.keys(dateGroups).sort().reverse();
+      sortedDates.forEach(date => {
+        const grp = dateGroups[date];
+        const gCost = grp.reduce((s,o) => s + o.cost_usdc, 0);
+        const gMtm = grp.reduce((s,o) => s + (o.mtm_pnl !== null && o.mtm_pnl !== undefined ? o.mtm_pnl : 0), 0);
+        const gEdge = grp.reduce((s,o) => s + o.edge_pct, 0) / grp.length;
+        oHtml += `<tr class="date-group-header" style="background:rgba(255,255,255,0.03);border-top:1px solid var(--border);cursor:pointer;" onclick="toggleDateGroup(this.querySelector('.dg-btn'))">
+          <td colspan="6" style="font-weight:700;color:var(--green);padding:6px 8px;"><button class="dg-btn" data-date="${date}" data-table="opened-table" data-collapsed="0" onclick="event.stopPropagation();toggleDateGroup(this)" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:14px;margin-right:6px;">&#9660;</button>${date} &mdash; ${grp.length} trades</td>
+          <td style="font-weight:600;">${gEdge.toFixed(1)}%</td>
+          <td class="mono" style="font-weight:600;">${grp.reduce((s,o) => s + o.shares, 0).toFixed(1)}</td>
+          <td class="mono" style="font-weight:600;">$${gCost.toFixed(2)}</td>
+          <td class="${pnlClass(gMtm)}" style="font-weight:600;">${fmt$(gMtm)}</td>
+          <td></td><td></td>
         </tr>`;
-      }).join('');
+        oHtml += grp.map(o => {
+          const daysStr = o.days_left !== null ? (o.days_left <= 0 ? '<span style="color:var(--green);">Today</span>' : o.days_left <= 1 ? '<span style="color:var(--yellow);">' + o.days_left + 'd</span>' : o.days_left + 'd') : '?';
+          const hasMtm = o.current_price !== null && o.current_price !== undefined;
+          const curStr = hasMtm ? o.current_price.toFixed(3) : '--';
+          const mtmStr = hasMtm ? `<span class="${pnlClass(o.mtm_pnl)}" style="font-weight:600;">${fmt$(o.mtm_pnl)}</span>` : '--';
+          return `<tr data-date="${date}">
+            <td class="slug-col"><a href="${o.url}" target="_blank" class="pm-link" title="${o.slug}">${shortSlug(o.slug)}</a></td>
+            <td>${o.outcome}</td>
+            <td>${o.sport}</td>
+            <td>${o.market_type}</td>
+            <td class="mono">${o.entry_price.toFixed(3)}</td>
+            <td class="mono">${curStr}</td>
+            <td class="${edgeClass(o.edge_pct)}">${o.edge_pct}%</td>
+            <td class="mono">${o.shares}</td>
+            <td class="mono">$${o.cost_usdc.toFixed(2)}</td>
+            <td>${mtmStr}</td>
+            <td>${daysStr}</td>
+            <td class="mono" style="font-size:11px;">${shortTime(o.opened_at)}</td>
+          </tr>`;
+        }).join('');
+      });
       openedTbody.innerHTML = oHtml;
     } else {
       openedEmpty.style.display = 'block';
@@ -2380,23 +2484,46 @@ async function refreshAll() {
         <td>${r2Wins}W / ${r2Losses}L</td>
         <td></td>
       </tr>`;
-      r2Html += resolvedList.map(r => {
-        const resultBadge = r.won
-          ? '<span style="color:var(--green);font-weight:700;">WON</span>'
-          : '<span style="color:var(--red);font-weight:700;">LOST</span>';
-        return `<tr>
-          <td class="slug-col"><a href="${r.url}" target="_blank" class="pm-link" title="${r.slug}">${shortSlug(r.slug)}</a></td>
-          <td>${r.outcome}</td>
-          <td>${r.sport}</td>
-          <td>${r.market_type}</td>
-          <td class="mono">${r.entry_price.toFixed(3)}</td>
-          <td class="${edgeClass(r.edge_pct)}">${r.edge_pct}%</td>
-          <td class="mono">$${r.cost_usdc.toFixed(2)}</td>
-          <td class="${pnlClass(r.pnl)} mono" style="font-weight:700;">${fmt$(r.pnl)}</td>
-          <td>${resultBadge}</td>
-          <td class="mono" style="font-size:11px;">${shortTime(r.closed_at)}</td>
+      // Group resolved by date
+      const rDateGroups = {};
+      resolvedList.forEach(r => {
+        const d = (r.closed_at || '').substring(0, 10) || 'Unknown';
+        if (!rDateGroups[d]) rDateGroups[d] = [];
+        rDateGroups[d].push(r);
+      });
+      const rSortedDates = Object.keys(rDateGroups).sort().reverse();
+      rSortedDates.forEach(date => {
+        const grp = rDateGroups[date];
+        const gCost = grp.reduce((s,r) => s + r.cost_usdc, 0);
+        const gPnl = grp.reduce((s,r) => s + r.pnl, 0);
+        const gWins = grp.filter(r => r.won).length;
+        const gLosses = grp.length - gWins;
+        r2Html += `<tr class="date-group-header" style="background:rgba(255,255,255,0.03);border-top:1px solid var(--border);cursor:pointer;" onclick="toggleDateGroup(this.querySelector('.dg-btn'))">
+          <td colspan="5" style="font-weight:700;color:var(--green);padding:6px 8px;"><button class="dg-btn" data-date="${date}" data-table="resolved-table2" data-collapsed="0" onclick="event.stopPropagation();toggleDateGroup(this)" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:14px;margin-right:6px;">&#9660;</button>${date} &mdash; ${grp.length} trades</td>
+          <td></td>
+          <td class="mono" style="font-weight:600;">$${gCost.toFixed(2)}</td>
+          <td class="${pnlClass(gPnl)} mono" style="font-weight:600;">${fmt$(gPnl)}</td>
+          <td style="font-weight:600;">${gWins}W / ${gLosses}L</td>
+          <td></td>
         </tr>`;
-      }).join('');
+        r2Html += grp.map(r => {
+          const resultBadge = r.won
+            ? '<span style="color:var(--green);font-weight:700;">WON</span>'
+            : '<span style="color:var(--red);font-weight:700;">LOST</span>';
+          return `<tr data-date="${date}">
+            <td class="slug-col"><a href="${r.url}" target="_blank" class="pm-link" title="${r.slug}">${shortSlug(r.slug)}</a></td>
+            <td>${r.outcome}</td>
+            <td>${r.sport}</td>
+            <td>${r.market_type}</td>
+            <td class="mono">${r.entry_price.toFixed(3)}</td>
+            <td class="${edgeClass(r.edge_pct)}">${r.edge_pct}%</td>
+            <td class="mono">$${r.cost_usdc.toFixed(2)}</td>
+            <td class="${pnlClass(r.pnl)} mono" style="font-weight:700;">${fmt$(r.pnl)}</td>
+            <td>${resultBadge}</td>
+            <td class="mono" style="font-size:11px;">${shortTime(r.closed_at)}</td>
+          </tr>`;
+        }).join('');
+      });
       resolvedTbody2.innerHTML = r2Html;
     } else {
       resolvedEmpty2.style.display = 'block';
