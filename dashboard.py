@@ -197,6 +197,55 @@ def _bot_status() -> str:
     return "Stopped"
 
 
+def _last_scan_info() -> dict:
+    """Parse bot log to find last scan time, matched markets, and new trades.
+
+    Scans the last ~200 lines of the log file for the most recent cycle.
+    """
+    result = {"last_scan_utc": None, "last_scan_ago": None,
+              "matched_markets": 0, "new_trades": 0, "total_edges": 0}
+    if not LOG_FILE.exists():
+        return result
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        # Scan last 300 lines in reverse for most recent cycle
+        import re as _re
+        found_scan = False
+        for line in reversed(lines[-300:]):
+            if "Scan at " in line and not found_scan:
+                idx = line.find("Scan at ")
+                if idx >= 0:
+                    ts_str = line[idx + 8:idx + 27].strip()
+                    try:
+                        dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                        dt = dt.replace(tzinfo=timezone.utc)
+                        result["last_scan_utc"] = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+                        delta = (datetime.now(timezone.utc) - dt).total_seconds()
+                        result["last_scan_ago"] = int(delta)
+                        found_scan = True
+                    except ValueError:
+                        pass
+            if "Matched " in line and "Polymarket markets" in line and result["matched_markets"] == 0:
+                m = _re.search(r"Matched (\d+) Polymarket", line)
+                if m:
+                    result["matched_markets"] = int(m.group(1))
+            if "Step 4:" in line and "directional opportunities" in line and result["new_trades"] == 0:
+                m = _re.search(r"Step 4: (\d+) directional", line)
+                if m:
+                    result["new_trades"] = int(m.group(1))
+            if "Edge filter breakdown" in line and result["total_edges"] == 0:
+                m = _re.search(r"\((\d+) total", line)
+                if m:
+                    result["total_edges"] = int(m.group(1))
+            # Stop once we have all fields
+            if found_scan and result["matched_markets"] and result["new_trades"] is not None:
+                break
+    except Exception:
+        pass
+    return result
+
+
 def _is_live_trading() -> bool:
     """Check if the bot is in live mode (not paper/dry-run)."""
     if not LOG_FILE.exists():
@@ -308,10 +357,12 @@ def api_summary():
     best_trade_pnl = max((_safe_float(p.get("pnl")) for p in resolved), default=0.0)
 
     rn1 = _rn1_tracker_status()
+    scan = _last_scan_info()
     return jsonify({
         "bot_status": _bot_status(),
         "live_trading": _is_live_trading(),
         "rn1_tracker": rn1,
+        "last_scan": scan,
         "total_pnl": round(total_pnl, 2),
         "win_rate": round(win_rate, 1),
         "wins": wins,
@@ -1402,6 +1453,18 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <div class="container">
   <div class="last-updated" id="last-updated">Loading...</div>
 
+  <!-- Last Scan Status Banner -->
+  <div id="scan-banner" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;font-size:13px;flex-wrap:wrap;">
+    <span style="font-weight:600;color:var(--text-dim);">Last Scan</span>
+    <span id="scan-time" style="color:var(--text);">--</span>
+    <span style="color:var(--border);">|</span>
+    <span id="scan-matched" style="color:var(--text-dim);">--</span>
+    <span style="color:var(--border);">|</span>
+    <span id="scan-trades" style="color:var(--text-dim);">--</span>
+    <span style="color:var(--border);">|</span>
+    <span id="scan-edges" style="color:var(--text-dim);">--</span>
+  </div>
+
   <!-- Summary Cards (always visible) -->
   <div class="cards" id="summary-cards">
     <div class="card">
@@ -2021,6 +2084,36 @@ async function refreshAll() {
   }
   } catch(e) {
     console.error('Traffic lights error:', e);
+  }
+
+  // === Last Scan Banner ===
+  try {
+  if (summary && summary.last_scan) {
+    const scan = summary.last_scan;
+    const scanTimeEl = document.getElementById('scan-time');
+    const scanMatchedEl = document.getElementById('scan-matched');
+    const scanTradesEl = document.getElementById('scan-trades');
+    const scanEdgesEl = document.getElementById('scan-edges');
+    if (scanTimeEl) {
+      if (scan.last_scan_utc) {
+        const ago = scan.last_scan_ago;
+        let agoStr = ago < 60 ? ago + 's ago' : ago < 3600 ? Math.floor(ago/60) + 'm ago' : Math.floor(ago/3600) + 'h ago';
+        scanTimeEl.textContent = scan.last_scan_utc.replace(' UTC','') + ' (' + agoStr + ')';
+        scanTimeEl.style.color = ago < 600 ? 'var(--green)' : ago < 1800 ? 'var(--yellow)' : 'var(--red)';
+      } else {
+        scanTimeEl.textContent = 'No scans yet';
+        scanTimeEl.style.color = 'var(--text-dim)';
+      }
+    }
+    if (scanMatchedEl) scanMatchedEl.innerHTML = '<b>' + (scan.matched_markets||0) + '</b> matched markets';
+    if (scanTradesEl) {
+      const n = scan.new_trades || 0;
+      scanTradesEl.innerHTML = '<b style="color:' + (n > 0 ? 'var(--green)' : 'var(--text-dim)') + '">' + n + '</b> new trades';
+    }
+    if (scanEdgesEl) scanEdgesEl.innerHTML = '<b>' + (scan.total_edges||0) + '</b> edges evaluated';
+  }
+  } catch(e) {
+    console.error('Scan banner error:', e);
   }
 
   // === Summary Cards ===

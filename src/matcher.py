@@ -352,6 +352,15 @@ def classify_market_type(slug: str, question: str) -> str:
     slug_l = slug.lower()
     q_l = question.lower()
 
+    # Exotic markets first (must check before totals — "-corners-over-" contains "-over-")
+    if any(x in slug_l for x in ["-exact-", "-halftime-", "-more-market",
+                                   "-1h-", "-2h-", "-btts-", "-corners-",
+                                   "-first-set-", "-set-totals-",
+                                   "-set-handicap-", "-match-total-",
+                                   "-game-handicap-", "-tiebreak-",
+                                   "-aces-", "-double-faults-"]):
+        return "exotic"
+
     # Spread markets: slug contains "-spread-" or question mentions spread
     if "-spread-" in slug_l or "spread" in q_l:
         return "spread"
@@ -361,15 +370,6 @@ def classify_market_type(slug: str, question: str) -> str:
         return "total"
     if any(x in q_l for x in ["o/u ", "over/under", "total goals", "total points"]):
         return "total"
-
-    # Exotic markets we skip (no matching odds data available)
-    if any(x in slug_l for x in ["-exact-", "-halftime-", "-more-market",
-                                   "-1h-", "-2h-", "-btts-", "-corners-",
-                                   "-first-set-", "-set-totals-",
-                                   "-set-handicap-", "-match-total-",
-                                   "-game-handicap-", "-tiebreak-",
-                                   "-aces-", "-double-faults-"]):
-        return "exotic"
 
     # Default: h2h (moneyline / match winner)
     return "h2h"
