@@ -48,7 +48,7 @@ class Config:
     # Extended from RN1 analysis — most profitable sports first
     target_sports: list = field(default_factory=lambda: [
         # Top tier (highest volume and P&L for RN1)
-        "epl", "bun", "lal", "cs2", "ucl",
+        "epl", "bun", "lal", "ucl",
         # Second tier
         "sea", "fl1", "uel", "elc", "itsb",
         # Third tier
@@ -59,4 +59,5 @@ class Config:
         "atp", "wta",
         # Others
         "scop", "bra", "mls", "tur",
+        # Not available on The Odds API: cs2, lol, dota2, val, codmw (esports)
     ])

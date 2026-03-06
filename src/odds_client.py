@@ -35,7 +35,7 @@ SPORT_KEY_MAP = {
     "bra": "soccer_brazil_campeonato",
     "mls": "soccer_usa_mls",
     "tur": "soccer_turkey_super_league",
-    "spl": "soccer_spain_primera_division",  # alias
+    # "spl" removed: soccer_spain_primera_division doesn't exist; La Liga is "lal" -> soccer_spain_la_liga
     # US sports
     "nba": "basketball_nba",
     "cbb": "basketball_ncaab",

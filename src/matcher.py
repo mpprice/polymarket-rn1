@@ -288,8 +288,8 @@ def match_markets(
     match_log = []  # For validation
 
     for pm in poly_markets:
-        sport = pm["sport"]
-        if sport not in odds_events:
+        sport = pm.get("sport", "")
+        if not sport or sport not in odds_events:
             continue
 
         slug = pm.get("slug", "")
