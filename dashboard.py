@@ -1169,6 +1169,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
       </div>
     </div>
     <span id="utc-time" class="utc-time"></span>
+    <span id="js-debug" style="color:#ff4444;font-size:11px;display:block;"></span>
   </div>
 </div>
 
@@ -1568,6 +1569,13 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 </div>
 
 <script>
+// --- Debug ---
+window.onerror = function(msg, url, line, col, err) {
+  const d = document.getElementById('js-debug');
+  if (d) d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+  return false;
+};
+
 // --- State ---
 let lastUpdated = Date.now();
 let sportChart = null, mtChart = null;
@@ -1659,6 +1667,9 @@ function destroyChart(chart) { if (chart) chart.destroy(); return null; }
 
 // --- Main refresh ---
 async function refreshAll() {
+  console.log('[DASH] refreshAll() called at', new Date().toISOString());
+  const dbg = document.getElementById('js-debug');
+  if (dbg) dbg.textContent = 'JS OK - loading data...';
   let summary=null, positions=null, resolved=null, log=null, sports=null, mtypes=null, learning=null,
       pnlSeries=null, dailyPnl=null, edgeDist=null, calibration=null, stats=null, activity=null,
       heatmap=null, rn1=null, rn1live=null;
@@ -1683,8 +1694,13 @@ async function refreshAll() {
         fetchJSON('/api/rn1'),
         fetchJSON('/api/rn1_live'),
       ]);
-  } catch(e) { console.error('Promise.all failed:', e); }
+  } catch(e) {
+    console.error('Promise.all failed:', e);
+    if (dbg) dbg.textContent = 'FETCH ERROR: ' + e.message;
+  }
 
+  console.log('[DASH] summary:', summary ? 'OK' : 'null', 'bot_status:', summary?.bot_status);
+  if (dbg && summary) dbg.textContent = 'Data loaded. bot=' + summary.bot_status + ' rn1=' + (summary.rn1_tracker?.alive ? 'alive' : 'dead');
   lastUpdated = Date.now();
 
   // === Traffic Lights (first — must always render) ===
@@ -1737,7 +1753,10 @@ async function refreshAll() {
       }
     }
   }
-  } catch(e) { console.error('Traffic lights error:', e); }
+  } catch(e) {
+    console.error('Traffic lights error:', e);
+    if (dbg) dbg.textContent = 'TL ERROR: ' + e.message;
+  }
 
   // === Summary Cards ===
   try {
@@ -1752,7 +1771,10 @@ async function refreshAll() {
     document.getElementById('card-trades').textContent = summary.total_trades || 0;
     document.getElementById('utc-time').textContent = summary.utc_now || '';
   }
-  } catch(e) { console.error('Summary cards error:', e); }
+  } catch(e) {
+    console.error('Summary cards error:', e);
+    if (dbg) dbg.textContent = 'SUMMARY ERROR: ' + e.message;
+  }
 
   // === Extended Stats ===
   try {
