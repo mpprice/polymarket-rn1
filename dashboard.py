@@ -80,6 +80,50 @@ def _bot_status() -> str:
     return "Stopped"
 
 
+def _is_live_trading() -> bool:
+    """Check if the bot is in live mode (not paper/dry-run)."""
+    if not LOG_FILE.exists():
+        return False
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        # Check last 200 lines for DRY RUN indicator
+        for line in lines[-200:]:
+            if "[DRY RUN]" in line:
+                return False
+            if "dry_run=False" in line:
+                return True
+        return False  # default paper
+    except Exception:
+        return False
+
+
+def _rn1_tracker_status() -> dict:
+    """Return RN1 tracker status: alive, last_poll, trades info."""
+    summary_path = DATA_DIR / "rn1_live_summary.json"
+    log_path = BASE_DIR / "rn1_tracker.log"
+
+    result = {"alive": False, "last_poll": None, "last_poll_ago": None,
+              "trades_last_5m": 0, "trades_last_15m": 0, "active_markets": 0}
+
+    # Check summary file freshness
+    if summary_path.exists():
+        age = time.time() - os.path.getmtime(summary_path)
+        result["alive"] = age < 120  # alive if updated in last 2 min
+        result["last_poll_ago"] = int(age)
+        try:
+            with open(summary_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            result["last_poll"] = data.get("last_poll")
+            result["trades_last_5m"] = data.get("trades_last_5m", 0)
+            result["trades_last_15m"] = data.get("trades_last_15m", 0)
+            result["active_markets"] = len(data.get("active_markets", []))
+        except Exception:
+            pass
+
+    return result
+
+
 def _read_log_lines(n: int = 80) -> list[str]:
     if not LOG_FILE.exists():
         return ["(no log file found)"]
@@ -146,8 +190,11 @@ def api_summary():
 
     best_trade_pnl = max((_safe_float(p.get("pnl")) for p in resolved), default=0.0)
 
+    rn1 = _rn1_tracker_status()
     return jsonify({
         "bot_status": _bot_status(),
+        "live_trading": _is_live_trading(),
+        "rn1_tracker": rn1,
         "total_pnl": round(total_pnl, 2),
         "win_rate": round(win_rate, 1),
         "wins": wins,
@@ -867,6 +914,35 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
   }
   .badge-paper { background: var(--yellow); color: #1a1a2e; }
+
+  /* Traffic Light System */
+  .traffic-lights {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+  }
+  .tl-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+  }
+  .tl-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+  .tl-green { background: var(--green); box-shadow: 0 0 8px rgba(0,212,170,0.6); }
+  .tl-yellow { background: var(--yellow); box-shadow: 0 0 8px rgba(255,217,61,0.5); }
+  .tl-red { background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.4); }
+  .tl-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .tl-detail { font-size: 11px; color: var(--text); font-family: 'Cascadia Code', monospace; }
   .badge-running { background: var(--green); color: #1a1a2e; }
   .badge-stopped { background: var(--red); color: #fff; }
   .utc-time { color: var(--text-muted); font-size: 13px; }
@@ -1074,9 +1150,24 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
     <h1><span>&#9670;</span> Polymarket Arb Bot <span>|</span> Dashboard</h1>
   </div>
   <div class="header-right">
-    <span class="badge badge-paper">Paper Trade</span>
-    <span id="rn1-live-badge" class="badge" style="background:var(--purple);color:#fff;display:none;">RN1: 0 mkts</span>
-    <span id="bot-status" class="badge badge-stopped">Stopped</span>
+    <!-- Traffic Light System -->
+    <div class="traffic-lights">
+      <div class="tl-item" id="tl-bot" title="Bot Status">
+        <span class="tl-dot tl-red"></span>
+        <span class="tl-label">Bot</span>
+        <span class="tl-detail" id="tl-bot-detail">Stopped</span>
+      </div>
+      <div class="tl-item" id="tl-mode" title="Trading Mode">
+        <span class="tl-dot tl-yellow"></span>
+        <span class="tl-label">Mode</span>
+        <span class="tl-detail" id="tl-mode-detail">Paper</span>
+      </div>
+      <div class="tl-item" id="tl-rn1" title="RN1 Tracker">
+        <span class="tl-dot tl-red"></span>
+        <span class="tl-label">RN1</span>
+        <span class="tl-detail" id="tl-rn1-detail">Offline</span>
+      </div>
+    </div>
     <span id="utc-time" class="utc-time"></span>
   </div>
 </div>
@@ -1603,11 +1694,45 @@ async function refreshAll() {
     document.getElementById('card-trades').textContent = summary.total_trades;
     document.getElementById('utc-time').textContent = summary.utc_now;
 
-    const statusEl = document.getElementById('bot-status');
+    // === Traffic Lights ===
+    // Bot status
+    const tlBotDot = document.querySelector('#tl-bot .tl-dot');
+    const tlBotDetail = document.getElementById('tl-bot-detail');
     if (summary.bot_status === 'Running') {
-      statusEl.textContent = 'Running'; statusEl.className = 'badge badge-running';
+      tlBotDot.className = 'tl-dot tl-green';
+      tlBotDetail.textContent = 'Running';
     } else {
-      statusEl.textContent = 'Stopped'; statusEl.className = 'badge badge-stopped';
+      tlBotDot.className = 'tl-dot tl-red';
+      tlBotDetail.textContent = 'Stopped';
+    }
+
+    // Trading mode
+    const tlModeDot = document.querySelector('#tl-mode .tl-dot');
+    const tlModeDetail = document.getElementById('tl-mode-detail');
+    if (summary.live_trading) {
+      tlModeDot.className = 'tl-dot tl-green';
+      tlModeDetail.textContent = 'LIVE';
+      tlModeDetail.style.color = 'var(--green)';
+      tlModeDetail.style.fontWeight = '700';
+    } else {
+      tlModeDot.className = 'tl-dot tl-yellow';
+      tlModeDetail.textContent = 'Paper';
+      tlModeDetail.style.color = 'var(--yellow)';
+      tlModeDetail.style.fontWeight = '600';
+    }
+
+    // RN1 tracker
+    const tlRn1Dot = document.querySelector('#tl-rn1 .tl-dot');
+    const tlRn1Detail = document.getElementById('tl-rn1-detail');
+    if (summary.rn1_tracker && summary.rn1_tracker.alive) {
+      tlRn1Dot.className = 'tl-dot tl-green';
+      const ago = summary.rn1_tracker.last_poll_ago;
+      const mkts = summary.rn1_tracker.active_markets;
+      const t5 = summary.rn1_tracker.trades_last_5m;
+      tlRn1Detail.textContent = ago + 's ago | ' + mkts + ' mkts | ' + t5 + ' trades/5m';
+    } else {
+      tlRn1Dot.className = 'tl-dot tl-red';
+      tlRn1Detail.textContent = 'Offline';
     }
   }
 
