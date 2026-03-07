@@ -77,13 +77,14 @@ class OddsPapiClient:
     BASE_URL = "https://api.oddspapi.io/v4"
 
     # Minimum seconds between API calls to avoid 429s
-    REQUEST_DELAY = 0.5
+    REQUEST_DELAY = 0.8
 
     def __init__(self, api_key: str):
         self.api_key = api_key
         self._session = requests.Session()
         self._tournament_cache: dict[int, list[dict]] = {}
         self._fixture_name_cache: dict[str, tuple[str, str]] = {}
+        self._fetched_tournament_ids: set[int] = set()
         self._last_request_time: float = 0
 
     def get_esports_odds(self, pm_sport: str) -> list[dict]:
@@ -105,7 +106,7 @@ class OddsPapiClient:
             # Step 2: Fetch fixture names for participant lookup
             for t in tournaments:
                 tid = t["tournamentId"]
-                if not any(fid for fid, names in self._fixture_name_cache.items()):
+                if tid not in self._fetched_tournament_ids:
                     self._cache_fixture_names(tid)
 
             # Step 3: Fetch Pinnacle odds in batches of 5
@@ -163,6 +164,7 @@ class OddsPapiClient:
 
     def _cache_fixture_names(self, tournament_id: int):
         """Fetch fixtures for a tournament and cache participant names."""
+        self._fetched_tournament_ids.add(tournament_id)
         try:
             resp = self._rate_limited_get(
                 f"{self.BASE_URL}/fixtures",
@@ -188,8 +190,7 @@ class OddsPapiClient:
 
         # Ensure we have fixture names for these tournaments
         for tid in tournament_ids:
-            # Check if we have any fixtures from this tournament cached
-            if not any(True for _ in self._fixture_name_cache):
+            if tid not in self._fetched_tournament_ids:
                 self._cache_fixture_names(tid)
 
         try:
@@ -357,3 +358,4 @@ class OddsPapiClient:
         """Clear tournament and fixture caches (call between scan cycles)."""
         self._tournament_cache.clear()
         self._fixture_name_cache.clear()
+        self._fetched_tournament_ids.clear()
