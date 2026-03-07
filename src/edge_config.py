@@ -55,14 +55,57 @@ SPORT_OVERROUND_DEFAULTS: dict[str, str] = {
     "tur": OverroundMethod.SHIN,
     "col": OverroundMethod.SHIN,
     "spl": OverroundMethod.SHIN,
+    # Tier 1 expansion — all soccer, use Shin's
+    "aus": OverroundMethod.SHIN,
+    "efa": OverroundMethod.SHIN,
+    "den": OverroundMethod.SHIN,
+    "fr2": OverroundMethod.SHIN,
+    "cdr": OverroundMethod.SHIN,
+    "uef": OverroundMethod.SHIN,
+    # Tier 2 expansion
+    "bel": OverroundMethod.SHIN,
+    "aut": OverroundMethod.SHIN,
+    "gre": OverroundMethod.SHIN,
+    "nor": OverroundMethod.SHIN,
+    "swe": OverroundMethod.SHIN,
+    "swi": OverroundMethod.SHIN,
+    "pol": OverroundMethod.SHIN,
+    "jap": OverroundMethod.SHIN,
+    "ja2": OverroundMethod.SHIN,
+    "kor": OverroundMethod.SHIN,
+    "dfb": OverroundMethod.SHIN,
+    "efl": OverroundMethod.SHIN,
+    "el1": OverroundMethod.SHIN,
+    "el2": OverroundMethod.SHIN,
+    "bl3": OverroundMethod.SHIN,
+    "lib": OverroundMethod.SHIN,
     # US sports — MWPO (tight 2-way markets, minimal FLB)
     "nba": OverroundMethod.MWPO,
     "cbb": OverroundMethod.MWPO,
     "nfl": OverroundMethod.MWPO,
     "nhl": OverroundMethod.MWPO,
+    # Rugby — 2-way, similar to US sports
+    "rusixnat": OverroundMethod.MWPO,
+    "ruprem": OverroundMethod.MWPO,
+    "rutopft": OverroundMethod.MWPO,
+    "rueuchamp": OverroundMethod.MWPO,
+    "ruurc": OverroundMethod.MWPO,
+    "ruchamp": OverroundMethod.MWPO,
+    # Cricket — 2-way match winner
+    "ipl": OverroundMethod.MWPO,
+    "crint": OverroundMethod.MWPO,
+    "cricipl": OverroundMethod.MWPO,
+    "cricpsl": OverroundMethod.MWPO,
+    "cricpakt20cup": OverroundMethod.MWPO,
+    # Non-soccer expansion
+    "mlb": OverroundMethod.MWPO,
+    "mma": OverroundMethod.POWER,  # 2-way, significant FLB
     # Tennis — Power method (2-way, significant FLB at extremes)
     "atp": OverroundMethod.POWER,
     "wta": OverroundMethod.POWER,
+    # Esports — 2-way match winner, tight Pinnacle margins
+    "cs2": OverroundMethod.MWPO,
+    "dota2": OverroundMethod.MWPO,
 }
 
 

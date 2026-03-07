@@ -5,7 +5,7 @@ from typing import Optional
 
 import requests
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import ApiCreds, OrderArgs, MarketOrderArgs, OrderType
+from py_clob_client.clob_types import ApiCreds, OrderArgs, PartialCreateOrderOptions
 from py_clob_client.order_builder.constants import BUY, SELL
 
 from .config import Config
@@ -187,8 +187,51 @@ class PolymarketClient:
             return None
 
     def get_best_price(self, token_id: str, side: str = "BUY") -> float:
-        """Get best available price for a side."""
-        return float(self._clob.get_price(token_id, side))
+        """Get best available price for a side.
+
+        The CLOB get_price endpoint returns the effective price accounting for
+        neg_risk markets. For BUY side this is the price you'd actually pay.
+        """
+        result = self._clob.get_price(token_id, side)
+        if isinstance(result, dict):
+            return float(result.get("price", 0))
+        return float(result)
+
+    def get_effective_spread(self, token_id: str) -> Optional[dict]:
+        """Get effective spread for a token using both YES and NO orderbooks.
+
+        Polymarket has dual orderbooks: each market has YES and NO tokens.
+        To buy YES you can either:
+          (a) lift the YES ask, or
+          (b) sell NO (complement: 1 - NO_bid)
+        The effective ask is min(YES_ask, 1 - NO_bid).
+        The effective bid is max(YES_bid, 1 - NO_ask).
+        Spread = effective_ask - effective_bid.
+
+        Uses the CLOB get_price endpoints which already compute effective
+        prices across both books.
+
+        Returns dict with mid, ask, bid, spread_bps or None on error.
+        """
+        try:
+            # get_price("BUY") = best price at which a MAKER buy rests (effective bid)
+            # get_price("SELL") = best price at which a MAKER sell rests (effective ask)
+            # For a BUY taker: you pay the SELL price (effective ask)
+            # For a SELL taker: you receive the BUY price (effective bid)
+            bid = self.get_best_price(token_id, "BUY")
+            ask = self.get_best_price(token_id, "SELL")
+            if not bid or not ask or bid <= 0 or ask <= 0:
+                return None
+            mid = (bid + ask) / 2
+            spread_bps = (ask - bid) / mid * 10000 if mid > 0 else 0
+            return {
+                "bid": bid,
+                "ask": ask,
+                "mid": mid,
+                "spread_bps": spread_bps,
+            }
+        except Exception:
+            return None
 
     # ── Order Placement ─────────────────────────────────────────────
 
@@ -211,6 +254,17 @@ class PolymarketClient:
             return {"orderID": "dry-run", "status": "simulated"}
 
         tick_size = self._clob.get_tick_size(token_id)
+
+        # Round price to tick grid (BUY rounds up, SELL rounds down)
+        import math
+        tick = float(tick_size)
+        decimals = len(str(tick_size).split(".")[-1]) if "." in str(tick_size) else 0
+        if side == "BUY":
+            price = round(math.ceil(price / tick) * tick, decimals)
+        else:
+            price = round(math.floor(price / tick) * tick, decimals)
+        # Let the CLOB auto-detect neg_risk from the token — Gamma API
+        # neg_risk flag is unreliable and causes "invalid signature" errors
         return self._clob.create_and_post_order(
             OrderArgs(
                 token_id=token_id,
@@ -218,8 +272,7 @@ class PolymarketClient:
                 size=size,
                 side=BUY if side == "BUY" else SELL,
             ),
-            options={"tick_size": str(tick_size), "neg_risk": neg_risk},
-            order_type=OrderType.GTC,
+            options=PartialCreateOrderOptions(tick_size=str(tick_size)),
         )
 
     def place_market_order(
@@ -228,19 +281,25 @@ class PolymarketClient:
         amount_usdc: float,
         side: str = "BUY",
     ) -> dict:
-        """Place a FOK market order. amount_usdc = dollars to spend (BUY) or shares to sell (SELL)."""
+        """Place a market order via limit at best price.
+
+        py_clob_client v0.34.6 doesn't support FOK/MarketOrderArgs.
+        Instead, fetch best price and place aggressive limit order.
+        """
         if self.dry_run:
             log.info("[DRY RUN] Market %s $%.2f token=%s...", side, amount_usdc, token_id[:20])
             return {"orderID": "dry-run", "status": "simulated"}
 
-        return self._clob.create_and_post_order(
-            MarketOrderArgs(
-                token_id=token_id,
-                amount=amount_usdc,
-                side=BUY if side == "BUY" else SELL,
-            ),
-            order_type=OrderType.FOK,
-        )
+        best_price = float(self._clob.get_price(token_id, side))
+        size = amount_usdc / best_price if side == "BUY" else amount_usdc
+        return self.place_limit_order(token_id, best_price, size, side)
+
+    def cancel_order(self, order_id: str) -> dict:
+        """Cancel a single order by ID."""
+        if self.dry_run:
+            log.info("[DRY RUN] Cancel order %s", order_id[:16])
+            return {}
+        return self._clob.cancel(order_id)
 
     def cancel_all_orders(self) -> dict:
         """Cancel all open orders."""

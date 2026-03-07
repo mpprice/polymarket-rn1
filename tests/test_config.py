@@ -17,7 +17,7 @@ class TestConfigDefaults:
 
     def test_target_sports_count(self):
         cfg = Config()
-        assert len(cfg.target_sports) == 26
+        assert len(cfg.target_sports) == 64
 
     def test_target_sports_contains_all_expected(self):
         cfg = Config()
@@ -30,9 +30,12 @@ class TestConfigDefaults:
             assert sport in cfg.target_sports, f"{sport} missing from target_sports"
 
     def test_newly_added_sports_present(self):
-        """NHL, CBB, CFB, ERE were added in the sport expansion."""
+        """Expanded sport coverage across tiers."""
         cfg = Config()
-        for sport in ["nhl", "cbb", "cfb", "ere"]:
+        for sport in ["nhl", "cbb", "cfb", "ere",
+                       "aus", "efa", "den", "fr2", "spl", "cdr", "uef",
+                       "bel", "aut", "gre", "mlb", "mma",
+                       "jap", "ja2", "rusixnat", "ruprem", "ipl", "crint"]:
             assert sport in cfg.target_sports, f"{sport} missing"
 
     @patch.dict(os.environ, {}, clear=False)
@@ -47,23 +50,23 @@ class TestConfigDefaults:
 
     @patch.dict(os.environ, {}, clear=False)
     def test_code_default_min_edge(self):
-        """Code default is 2.5; .env may override to 1.5."""
+        """Code default is 5.0 (raised from 2.5 to filter spread drag)."""
         env_copy = os.environ.copy()
         env_copy.pop("MIN_EDGE_PCT", None)
         with patch.dict(os.environ, env_copy, clear=True):
             cfg = Config()
-            assert cfg.min_edge_pct == 2.5
+            assert cfg.min_edge_pct == 5.0
 
     def test_effective_max_edge_with_env(self):
-        """With the project .env loaded, max_edge is 20.0."""
+        """With the project .env loaded, max_edge is 30.0."""
         cfg = Config()
-        # The .env sets MAX_EDGE_PCT=20.0
-        assert cfg.max_edge_pct == 20.0
+        # The .env sets MAX_EDGE_PCT=30.0
+        assert cfg.max_edge_pct == 30.0
 
     def test_effective_min_edge_with_env(self):
-        """With the project .env loaded, min_edge is 3.0."""
+        """With the project .env loaded, min_edge is 5.0."""
         cfg = Config()
-        assert cfg.min_edge_pct == 3.0
+        assert cfg.min_edge_pct == 5.0
 
     def test_effective_max_total_exposure_with_env(self):
         """With the project .env loaded, exposure is 400."""

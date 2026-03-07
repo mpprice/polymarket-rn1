@@ -260,7 +260,7 @@ class TestEvaluateEdge:
         e = _make_edge()
         opp = strat._evaluate_edge(m, e)
         assert opp is None
-        assert strat._filter_counts.get("size_zero", 0) == 1
+        assert strat._filter_counts.get("size_below_min", 0) == 1
 
 
 # ---- _has_conflicting_position ----

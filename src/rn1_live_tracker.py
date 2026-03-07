@@ -162,7 +162,8 @@ class RN1LiveTracker:
             time.sleep(wait)
             return []
 
-        # Filter to only NEW trades (timestamp > last_seen)
+        # Filter to only NEW activity (timestamp > last_seen)
+        # Skip REDEEM records — they're batch position closings, not market signals
         new_trades = []
         max_ts = self.last_seen_ts
 
@@ -171,10 +172,16 @@ class RN1LiveTracker:
             if ts <= self.last_seen_ts:
                 continue
 
-            trade = self._parse_activity(item)
-            new_trades.append(trade)
+            # Always advance the timestamp cursor (even for REDEEMs)
             if ts > max_ts:
                 max_ts = ts
+
+            # Only buffer actual trades for market discovery
+            if item.get("type") == "REDEEM":
+                continue
+
+            trade = self._parse_activity(item)
+            new_trades.append(trade)
 
         if new_trades:
             self.last_seen_ts = max_ts

@@ -3,6 +3,7 @@
 V2: Supports h2h, spreads, and totals markets in a single API call.
 """
 import logging
+import os
 from typing import Optional
 
 import requests
@@ -35,7 +36,49 @@ SPORT_KEY_MAP = {
     "bra": "soccer_brazil_campeonato",
     "mls": "soccer_usa_mls",
     "tur": "soccer_turkey_super_league",
-    # "spl" removed: soccer_spain_primera_division doesn't exist; La Liga is "lal" -> soccer_spain_la_liga
+    # Tier 1 expansion — Odds API confirmed active
+    "aus": "soccer_australia_aleague",
+    "efa": "soccer_fa_cup",
+    "den": "soccer_denmark_superliga",
+    "fr2": "soccer_france_ligue_two",
+    "spl": "soccer_spl",             # Scottish Premiership (distinct slug from scop)
+    "cdr": "soccer_spain_copa_del_rey",
+    "uef": "soccer_uefa_europa_conference_league",
+    # Additional high-volume leagues
+    "bel": "soccer_belgium_first_div",
+    "aut": "soccer_austria_bundesliga",
+    "gre": "soccer_greece_super_league",
+    "nor": "soccer_norway_eliteserien",
+    "swe": "soccer_sweden_allsvenskan",
+    "swi": "soccer_switzerland_superleague",
+    "pol": "soccer_poland_ekstraklasa",
+    "jap": "soccer_japan_j_league",       # Polymarket slug is "jap" not "jpl"
+    "kor": "soccer_korea_kleague1",
+    "dfb": "soccer_germany_dfb_pokal",
+    "efl": "soccer_england_efl_cup",
+    "el1": "soccer_england_league1",
+    "el2": "soccer_england_league2",
+    "bl3": "soccer_germany_liga3",
+    "lib": "soccer_conmebol_copa_libertadores",
+    # Non-soccer expansion
+    "mlb": "baseball_mlb",
+    "mma": "mma_mixed_martial_arts",
+    # Rugby
+    "rusixnat": "rugbyunion_six_nations",
+    "ruprem": "rugbyleague_nrl",           # NRL (closest Odds API match for rugby)
+    "rutopft": "rugbyleague_nrl",          # Top 14 France — map to NRL as fallback
+    # Cricket — routed through OddsPapi (Pinnacle, sportId=27)
+    "crint": "_oddspapi_crint",
+    "ipl": "_oddspapi_ipl",
+    "cricipl": "_oddspapi_cricipl",
+    "cricpsl": "_oddspapi_cricpsl",
+    "cricpakt20cup": "_oddspapi_cricpakt20cup",
+    # J2 League — no direct Odds API key, shares J1 mapping
+    "ja2": "soccer_japan_j_league",
+    # Rugby — additional leagues (mapped to closest available)
+    "rueuchamp": "rugbyunion_six_nations",  # European Championship
+    "ruurc": "rugbyunion_six_nations",      # URC
+    "ruchamp": "rugbyleague_nrl",           # Championship
     # US sports
     "nba": "basketball_nba",
     "cbb": "basketball_ncaab",
@@ -45,8 +88,10 @@ SPORT_KEY_MAP = {
     # Tennis — The Odds API uses tournament-specific keys
     "atp": "tennis_atp_indian_wells",  # rotates by active tournament
     "wta": "tennis_wta_indian_wells",
-    # Esports — not covered by The Odds API
-    # "cs2", "lol", "dota2", "val", "codmw" — would need separate data source
+    # Esports — covered by OddsPapi (not The Odds API)
+    # These keys are handled specially in get_all_sports_odds()
+    "cs2": "_oddspapi_cs2",
+    "dota2": "_oddspapi_dota2",
 }
 
 # Sharp bookmakers to use as fair odds reference (in priority order)
@@ -54,7 +99,7 @@ SHARP_BOOKS = ["pinnacle", "betfair_ex_eu", "matchbook", "betcris"]
 
 
 class OddsClient:
-    """Fetch and normalize odds from The Odds API."""
+    """Fetch and normalize odds from The Odds API + OddsPapi for esports."""
 
     BASE_URL = "https://api.the-odds-api.com/v4"
 
@@ -62,6 +107,13 @@ class OddsClient:
         self.api_key = config.odds_api_key
         self._session = requests.Session()
         self._remaining_requests = None
+        # OddsPapi for esports + cricket (optional — only if API key configured)
+        self._oddspapi = None
+        oddspapi_key = config.oddspapi_api_key
+        if oddspapi_key:
+            from .oddspapi_client import OddsPapiClient
+            self._oddspapi = OddsPapiClient(oddspapi_key)
+            log.info("OddsPapi client enabled (esports + cricket)")
 
     def get_odds(self, sport_key: str, markets: str = "h2h,spreads,totals") -> list[dict]:
         """Fetch odds for a sport. Returns normalized events with implied probs.
@@ -101,6 +153,18 @@ class OddsClient:
             if not odds_key:
                 log.debug("No odds mapping for Polymarket sport: %s", pm_sport)
                 continue
+
+            # Route esports to OddsPapi
+            if odds_key.startswith("_oddspapi_"):
+                if self._oddspapi:
+                    try:
+                        events = self._oddspapi.get_esports_odds(pm_sport)
+                        if events:
+                            all_odds[pm_sport] = events
+                    except Exception as e:
+                        log.warning("OddsPapi failed for %s: %s", pm_sport, e)
+                continue
+
             try:
                 events = self.get_odds(odds_key)
                 all_odds[pm_sport] = events

@@ -33,6 +33,15 @@ from .risk_manager import RiskManager
 from .position_tracker import PositionTracker
 
 MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
+MAX_SPREAD_BPS = 300  # Skip markets where bid-ask spread exceeds edge
+# Sub-market slug patterns to exclude (phantom edges from comparing sub-market to match-winner odds)
+SUB_MARKET_PATTERNS = (
+    "-first-set-", "-set-handicap-", "-set-totals-", "-match-total-",
+    "-first-half-", "-second-half-", "-first-quarter-", "-1st-set-",
+    "-2nd-set-", "-3rd-set-", "-first-5-innings-", "-first-period-",
+)
+# High-liquidity sports (tighter spreads, prioritized in sorting)
+HIGH_LIQ_SPORTS = {"nba", "nfl", "nhl", "epl", "ucl", "bun", "lal", "sea", "fl1", "mlb", "efa"}
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +67,8 @@ class Opportunity:
     adjusted_edge: float = None  # After learning adjustment
     rn1_score: float = 0.0  # RN1 pattern match score (0-100)
     volume_24h: float = 0.0  # Polymarket 24h volume in USD
+    spread_bps: float = 0.0  # Effective bid-ask spread in basis points
+    effective_mid: float = 0.0  # Effective midpoint from both YES/NO books
 
 
 class Strategy:
@@ -111,6 +122,10 @@ class Strategy:
         self.min_liquidity = 100.0  # $100 floor: filter truly illiquid markets only
         self.max_edge_pct = config.max_edge_pct
 
+        # MAKER order tracking for stale cancellation
+        self._pending_maker_orders: list[dict] = []
+        self.maker_order_ttl = 120  # Cancel unfilled MAKER orders after 2 minutes
+
     def scan(self) -> list[Opportunity]:
         """Run a single scan cycle. Returns filtered, sized opportunities."""
         log.info("=" * 60)
@@ -121,6 +136,8 @@ class Strategy:
         log.info("Step 1: %d Polymarket sports markets", len(pm_markets))
 
         # 2. Fetch sharp bookmaker odds (h2h + spreads + totals)
+        if self.odds._oddspapi:
+            self.odds._oddspapi.clear_cache()
         odds_data = self.odds.get_all_sports_odds(self.config.target_sports)
         total_odds = sum(len(v) for v in odds_data.values())
         log.info("Step 2: %d odds events across %d sports (API remaining: %s)",
@@ -146,8 +163,14 @@ class Strategy:
             log.info("Edge filter breakdown (%d total, %d passed): %s",
                      total_edges, len(candidates), self._filter_counts)
 
-        # Sort by edge first, then volume (prefer liquid markets), then RN1 score
-        candidates.sort(key=lambda x: (-(x.adjusted_edge or x.edge_pct), -x.volume_24h, -x.rn1_score))
+        # Sort: high-liq sports first, then by edge, tight spreads, volume, RN1 score
+        candidates.sort(key=lambda x: (
+            0 if x.sport in HIGH_LIQ_SPORTS else 1,  # high-liq sports first
+            -(x.adjusted_edge or x.edge_pct),
+            x.spread_bps,  # tighter spreads preferred
+            -x.volume_24h,
+            -x.rn1_score,
+        ))
 
         # Second pass: enforce cumulative exposure limit (best edges first)
         opportunities = []
@@ -165,9 +188,12 @@ class Strategy:
         for i, opp in enumerate(opportunities[:15]):
             adj = f" adj={opp.adjusted_edge:.1f}%" if opp.adjusted_edge is not None else ""
             rn1 = f" rn1={opp.rn1_score:.0f}" if opp.rn1_score > 0 else ""
-            log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s%s | $%.0f",
+            spr = f" spr={opp.spread_bps:.0f}bp" if opp.spread_bps > 0 else ""
+            liq = " HiLiq" if opp.sport in HIGH_LIQ_SPORTS else ""
+            log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s%s%s%s | $%.0f",
                      i + 1, opp.slug, opp.outcome, opp.market_type,
-                     opp.poly_price, opp.fair_prob, opp.edge_pct, adj, rn1, opp.size_usdc)
+                     opp.poly_price, opp.fair_prob, opp.edge_pct, adj, rn1, spr, liq,
+                     opp.size_usdc)
 
         return opportunities
 
@@ -217,6 +243,12 @@ class Strategy:
         odds = match["odds_event"]
         slug = pm.get("slug", "")
 
+        # Sub-market filter: skip first-set, set-handicap etc. (phantom edges)
+        for pattern in SUB_MARKET_PATTERNS:
+            if pattern in slug:
+                self._filter_counts["sub_market"] = self._filter_counts.get("sub_market", 0) + 1
+                return None
+
         # Only buy-side (edge > 0)
         if edge["side"] != "BUY":
             self._filter_counts["no_buy"] = self._filter_counts.get("no_buy", 0) + 1
@@ -262,6 +294,27 @@ class Strategy:
             self._filter_counts["low_volume"] = self._filter_counts.get("low_volume", 0) + 1
             return None
 
+        # Spread filter: fetch effective spread from both YES/NO orderbooks
+        spread_info = None
+        spread_bps = 0.0
+        effective_mid = edge["polymarket_price"]
+        try:
+            spread_info = self.poly.get_effective_spread(edge["token_id"])
+            if spread_info:
+                spread_bps = spread_info["spread_bps"]
+                effective_mid = spread_info["mid"]
+                # Skip if spread exceeds edge (would eat all profit)
+                edge_bps = edge["edge_pct"] * 100  # edge_pct is %, convert to bps
+                if spread_bps > edge_bps:
+                    self._filter_counts["wide_spread"] = self._filter_counts.get("wide_spread", 0) + 1
+                    return None
+                # Also enforce absolute max spread
+                if spread_bps > MAX_SPREAD_BPS:
+                    self._filter_counts["max_spread"] = self._filter_counts.get("max_spread", 0) + 1
+                    return None
+        except Exception:
+            pass  # Fall through if spread unavailable
+
         # Check if already holding this position
         if self.tracker.has_position(edge["token_id"]):
             self._filter_counts["already_held"] = self._filter_counts.get("already_held", 0) + 1
@@ -296,8 +349,8 @@ class Strategy:
             edge["polymarket_price"],
             kelly_fraction=self.config.kelly_fraction,
         )
-        if size <= 0:
-            self._filter_counts["size_zero"] = self._filter_counts.get("size_zero", 0) + 1
+        if size < 1.0:
+            self._filter_counts["size_below_min"] = self._filter_counts.get("size_below_min", 0) + 1
             return None
         # Note: cumulative exposure limit enforced in scan() second pass
 
@@ -329,41 +382,91 @@ class Strategy:
             adjusted_edge=adjusted_edge,
             rn1_score=rn1_score,
             volume_24h=pm.get("volume_24h", 0),
+            spread_bps=spread_bps,
+            effective_mid=effective_mid,
         )
 
     def execute(self, opportunities: list[Opportunity]):
-        """Place orders for opportunities."""
+        """Place orders for opportunities.
+
+        Hybrid execution:
+        - If edge is high even at best ask (>= 2x min_edge), cross the spread
+          for immediate fill (TAKER).
+        - Otherwise, place MAKER limit at effective midpoint for better price,
+          accepting slower fills. Unfilled MAKER orders are cancelled after
+          MAKER_ORDER_TTL_SECONDS.
+        """
         for opp in opportunities:
             try:
-                shares = opp.size_usdc / opp.poly_price
+                # Fetch live spread from both YES/NO orderbooks
+                spread = self.poly.get_effective_spread(opp.token_id)
+                if spread:
+                    best_ask = spread["ask"]
+                    best_bid = spread["bid"]
+                    mid = spread["mid"]
+                    live_spread_bps = spread["spread_bps"]
+                else:
+                    # Fallback to Gamma price
+                    best_ask = opp.poly_price
+                    best_bid = opp.poly_price
+                    mid = opp.poly_price
+                    live_spread_bps = 0.0
 
-                # Slippage estimation: fetch best ask price before ordering
-                expected_price = opp.poly_price
-                best_ask = None
-                slippage_bps = 0.0
-                try:
-                    best_ask = self.poly.get_best_price(opp.token_id, "BUY")
-                    if best_ask and best_ask > 0:
-                        slippage_bps = (best_ask - expected_price) / expected_price * 10000
-                except Exception:
-                    pass  # Non-critical — don't block the trade
+                # Check edge at best ask (worst case for buyer)
+                edge_at_ask = (opp.fair_prob - best_ask) / best_ask * 100 if best_ask > 0 else 0
+                edge_at_mid = (opp.fair_prob - mid) / mid * 100 if mid > 0 else 0
+
+                # Skip if no edge even at midpoint
+                if edge_at_mid < self.min_edge_pct:
+                    log.info("SKIP: %s [%s] edge at mid=%.1f%% (< %.1f%%) spread=%.0fbps",
+                             opp.slug, opp.outcome, edge_at_mid, self.min_edge_pct, live_spread_bps)
+                    continue
+
+                # Hybrid: cross spread if edge is high at ask, else MAKER at mid
+                if edge_at_ask >= self.min_edge_pct * 2:
+                    # Strong edge — cross spread for immediate fill
+                    order_price = best_ask
+                    order_mode = "TAKER"
+                elif edge_at_ask >= self.min_edge_pct:
+                    # Moderate edge at ask — still worth crossing
+                    order_price = best_ask
+                    order_mode = "TAKER"
+                else:
+                    # Edge only exists at mid — place MAKER order
+                    order_price = mid
+                    order_mode = "MAKER"
+
+                shares = opp.size_usdc / order_price
 
                 result = self.poly.place_limit_order(
                     token_id=opp.token_id,
-                    price=opp.poly_price,
+                    price=order_price,
                     size=shares,
                     side="BUY",
                     neg_risk=opp.neg_risk,
                 )
 
-                # In live mode, check actual fill price for slippage tracking
+                # Track MAKER orders for later cancellation if unfilled
+                order_id = None
+                if isinstance(result, dict):
+                    order_id = result.get("orderID") or result.get("id")
+                if order_mode == "MAKER" and order_id and order_id != "dry-run":
+                    self._pending_maker_orders.append({
+                        "order_id": order_id,
+                        "placed_at": time.time(),
+                        "token_id": opp.token_id,
+                        "slug": opp.slug,
+                        "outcome": opp.outcome,
+                    })
+
+                # In live mode, check actual fill price
                 fill_price = None
-                actual_slippage_bps = None
                 if not self.dry_run and isinstance(result, dict):
                     fill_price = result.get("avgPrice") or result.get("price")
                     if fill_price:
                         fill_price = float(fill_price)
-                        actual_slippage_bps = (fill_price - expected_price) / expected_price * 10000
+
+                actual_price = fill_price or order_price
 
                 # Track position
                 self.tracker.open_position(
@@ -372,7 +475,7 @@ class Strategy:
                     outcome=opp.outcome,
                     sport=opp.sport,
                     market_type=opp.market_type,
-                    entry_price=fill_price or opp.poly_price,
+                    entry_price=actual_price,
                     fair_prob=opp.fair_prob,
                     edge_pct=opp.edge_pct,
                     shares=shares,
@@ -386,20 +489,15 @@ class Strategy:
                     slug=opp.slug,
                     side="BUY",
                     size=shares,
-                    price=fill_price or opp.poly_price,
+                    price=actual_price,
                     usdc=opp.size_usdc,
                 )
 
-                # Log with slippage info
-                slip_str = ""
-                if best_ask and best_ask > 0:
-                    slip_str = f" | ask={best_ask:.3f} slip={slippage_bps:+.0f}bps"
-                if actual_slippage_bps is not None:
-                    slip_str += f" fill={fill_price:.3f} actual_slip={actual_slippage_bps:+.0f}bps"
-                log.info("ORDER: %s %s [%s] %.0f shares @ %.3f ($%.0f) edge=+%.1f%% vol=$%.0f%s",
-                         opp.market_type.upper(), opp.slug, opp.outcome,
-                         shares, opp.poly_price, opp.size_usdc, opp.edge_pct,
-                         opp.volume_24h, slip_str)
+                log.info("ORDER [%s]: %s %s [%s] %.0f shares @ %.3f ($%.0f) "
+                         "edge_ask=%.1f%% edge_mid=%.1f%% spread=%.0fbps vol=$%.0f",
+                         order_mode, opp.market_type.upper(), opp.slug, opp.outcome,
+                         shares, order_price, opp.size_usdc,
+                         edge_at_ask, edge_at_mid, live_spread_bps, opp.volume_24h)
 
             except Exception as e:
                 log.error("Order failed for %s: %s", opp.slug, e)
@@ -437,62 +535,30 @@ class Strategy:
                         resolution_price=res.get("resolution_price", 0),
                     ))
 
-    def check_early_exits(self):
-        """Check for positions that can be exited early (price near 0 or 1)."""
-        exits = self.tracker.check_early_exits(self.poly)
-        for ex in exits:
-            try:
-                if self.dry_run:
-                    # Paper mode: simulate the sell at midpoint
-                    log.info("EARLY EXIT [paper]: %s [%s] %s | exit=%.4f entry=%.3f "
-                             "shares=%.0f | PnL=$%.2f",
-                             ex["slug"], ex["outcome"], ex["exit_type"],
-                             ex["exit_price"], ex["entry_price"],
-                             ex["shares"], ex["pnl"])
-                else:
-                    # Live mode: place SELL limit order at current midpoint
-                    log.info("EARLY EXIT [live]: %s [%s] %s | selling %.0f shares @ %.4f",
-                             ex["slug"], ex["outcome"], ex["exit_type"],
-                             ex["shares"], ex["exit_price"])
-                    self.poly.place_limit_order(
-                        token_id=ex["token_id"],
-                        price=ex["exit_price"],
-                        size=ex["shares"],
-                        side="SELL",
-                    )
+    def cancel_stale_maker_orders(self):
+        """Cancel unfilled MAKER orders that have been on the book too long.
 
-                # Record the exit
-                self.tracker.close_early_exit(
-                    ex["token_id"], ex["exit_price"], ex["payout"])
-                self.risk.record_resolution(
-                    ex["token_id"], ex["payout"], ex["cost_usdc"])
+        Market may have moved against us — no point leaving stale orders.
+        Only applies to live trading (dry run orders are simulated).
+        """
+        if self.dry_run or not self._pending_maker_orders:
+            return
 
-                # Feed to learning agent
-                if self._learning:
-                    pos = self.tracker.positions.get(ex["token_id"])
-                    if pos:
-                        from .learning_agent import TradeOutcome
-                        self._learning.record_outcome(TradeOutcome(
-                            token_id=ex["token_id"],
-                            slug=ex["slug"],
-                            sport=ex.get("sport", ""),
-                            market_type=pos.market_type,
-                            outcome=ex["outcome"],
-                            entry_price=ex["entry_price"],
-                            fair_prob_at_entry=pos.fair_prob,
-                            edge_pct_at_entry=pos.edge_pct,
-                            shares=ex["shares"],
-                            cost_usdc=ex["cost_usdc"],
-                            bookmaker=pos.bookmaker,
-                            opened_at=pos.opened_at,
-                            resolved_at=pos.closed_at,
-                            won=ex["pnl"] > 0,
-                            pnl=ex["pnl"],
-                            resolution_price=ex["exit_price"],
-                        ))
-
-            except Exception as e:
-                log.error("Early exit failed for %s: %s", ex["slug"], e)
+        now = time.time()
+        still_pending = []
+        for order in self._pending_maker_orders:
+            age = now - order["placed_at"]
+            if age > self.maker_order_ttl:
+                try:
+                    self.poly.cancel_order(order["order_id"])
+                    log.info("CANCEL stale MAKER: %s [%s] after %ds (order=%s)",
+                             order["slug"], order["outcome"], int(age),
+                             order["order_id"][:16])
+                except Exception as e:
+                    log.debug("Cancel failed for %s: %s", order["order_id"][:16], e)
+            else:
+                still_pending.append(order)
+        self._pending_maker_orders = still_pending
 
     def run_loop(self, interval: int = None):
         """Run strategy in a continuous loop."""
@@ -511,8 +577,11 @@ class Strategy:
                 # Check resolutions first (UMA fully resolved)
                 self.check_resolutions()
 
-                # Check early exits (price near 0 or 1, outcome certain)
-                self.check_early_exits()
+                # Cancel stale MAKER orders before scanning for new ones
+                self.cancel_stale_maker_orders()
+
+                # Early exits disabled — hold to resolution (~2h) to avoid
+                # paying the bid-ask spread on exit (spread drag > time value)
 
                 # Scan for directional opportunities
                 opps = self.scan()

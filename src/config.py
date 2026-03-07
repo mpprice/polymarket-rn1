@@ -42,13 +42,14 @@ class Config:
 
     # Odds data
     odds_api_key: str = field(default_factory=lambda: os.getenv("ODDS_API_KEY", ""))
+    oddspapi_api_key: str = field(default_factory=lambda: os.getenv("ODDSPAPI_API_KEY", ""))
 
     # Risk limits
     # Priority: maximise trade count, always leave headroom for new high-edge trades
     bankroll_usdc: float = field(default_factory=lambda: _env_float("BANKROLL_USDC", "500"))
     max_position_usdc: float = field(default_factory=lambda: _env_float("MAX_POSITION_USDC", "8"))
     max_total_exposure_usdc: float = field(default_factory=lambda: _env_float("MAX_TOTAL_EXPOSURE_USDC", "200"))
-    min_edge_pct: float = field(default_factory=lambda: _env_float("MIN_EDGE_PCT", "2.5"))
+    min_edge_pct: float = field(default_factory=lambda: _env_float("MIN_EDGE_PCT", "5.0"))
     max_edge_pct: float = field(default_factory=lambda: _env_float("MAX_EDGE_PCT", "25.0"))
     kelly_fraction: float = field(default_factory=lambda: _env_float("KELLY_FRACTION", "0.15"))
 
@@ -85,5 +86,17 @@ class Config:
         "atp", "wta",
         # Others
         "scop", "bra", "mls", "tur", "ere",
-        # Not available on The Odds API: cs2, lol, dota2, val, codmw (esports)
+        # Tier 1 expansion (Odds API confirmed active, RN1 trades these)
+        "aus", "efa", "den", "fr2", "spl", "cdr", "uef",
+        # Tier 2 expansion (additional European/Asian leagues)
+        "bel", "aut", "gre", "nor", "swe", "swi", "pol",
+        "jap", "ja2", "kor", "dfb", "efl", "el1", "el2", "bl3", "lib",
+        # Rugby
+        "rusixnat", "ruprem", "rutopft", "rueuchamp", "ruurc", "ruchamp",
+        # Cricket (via OddsPapi Pinnacle — sportId=27)
+        "ipl", "crint", "cricipl", "cricpsl", "cricpakt20cup",
+        # Non-soccer
+        "mlb", "mma",
+        # Esports (via OddsPapi — needs ODDSPAPI_API_KEY in .env)
+        "cs2", "dota2",
     ])
