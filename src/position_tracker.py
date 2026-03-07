@@ -95,11 +95,41 @@ class PositionTracker:
         pos = self.positions.get(token_id)
         return pos is not None and pos.status == "open"
 
+    def get_position_cost(self, token_id: str) -> float:
+        """Return total USDC cost for a position, or 0 if not held."""
+        pos = self.positions.get(token_id)
+        if pos is not None and pos.status == "open":
+            return float(pos.cost_usdc or 0)
+        return 0.0
+
     def open_position(self, token_id: str, slug: str, outcome: str,
                       sport: str, market_type: str, entry_price: float,
                       fair_prob: float, edge_pct: float, shares: float,
                       cost_usdc: float, bookmaker: str):
-        """Record a new position."""
+        """Record a new position or scale into an existing one.
+
+        When scaling, accumulates shares and cost, and computes a
+        volume-weighted average entry price.
+        """
+        existing = self.positions.get(token_id)
+        if existing and existing.status == "open":
+            # Scale into existing position — accumulate shares/cost, VWAP entry
+            old_shares = existing.shares
+            old_cost = existing.cost_usdc
+            new_shares = old_shares + shares
+            new_cost = old_cost + cost_usdc
+            existing.entry_price = new_cost / new_shares if new_shares > 0 else entry_price
+            existing.shares = new_shares
+            existing.cost_usdc = new_cost
+            existing.fair_prob = fair_prob  # Update to latest fair value
+            existing.edge_pct = edge_pct
+            self._append_trade("SCALE", existing)
+            self.save()
+            log.info("Scaled: %s [%s] +%.0f shares @ %.3f (+$%.0f) -> total %.0f shares $%.0f",
+                     slug, outcome, shares, entry_price, cost_usdc,
+                     new_shares, new_cost)
+            return
+
         now = datetime.now(timezone.utc).isoformat()
         pos = Position(
             token_id=token_id,

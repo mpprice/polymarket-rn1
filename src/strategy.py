@@ -32,6 +32,7 @@ from .matcher import match_markets
 from .risk_manager import RiskManager
 from .position_tracker import PositionTracker
 
+MAX_POSITION_SCALE = 3  # Can hold up to 3x max_position_usdc per market
 MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
 MAX_SPREAD_BPS = 300  # Skip markets where bid-ask spread exceeds edge
 # Sub-market slug patterns to exclude (phantom edges from comparing sub-market to match-winner odds)
@@ -40,13 +41,32 @@ SUB_MARKET_PATTERNS = (
     "-first-half-", "-second-half-", "-first-quarter-", "-1st-set-",
     "-2nd-set-", "-3rd-set-", "-first-5-innings-", "-first-period-",
 )
-# High-liquidity sports (tighter spreads, prioritized in sorting)
+# High-liquidity sports (kept for backward compat in external imports)
 HIGH_LIQ_SPORTS = {"nba", "nfl", "nhl", "epl", "ucl", "bun", "lal", "sea", "fl1", "mlb", "efa"}
+
+# Sport tiers by RN1 ROI analysis — higher tier = more aggressive sizing
+SPORT_TIER = {
+    # Tier 1: US sports (80-112% ROI) — 1.5x Kelly boost
+    "cfb": 1, "nba": 1, "nfl": 1,
+    # Tier 2: Esports (35-50% ROI) — 1.3x Kelly boost
+    "cs2": 2, "dota2": 2, "lol": 2, "val": 2, "codmw": 2,
+    # Tier 3: Top soccer + hockey (35-48% ROI) — 1.2x Kelly boost
+    "epl": 3, "bun": 3, "nhl": 3, "mlb": 3,
+    # Tier 4: Everything else — 1.0x (default)
+}
+
+TIER_KELLY_BOOST = {
+    1: 1.5,   # US sports get 50% more Kelly
+    2: 1.3,   # Esports get 30% more
+    3: 1.2,   # Top soccer/hockey get 20% more
+    4: 1.0,   # Default
+}
 
 log = logging.getLogger(__name__)
 
 
 MIN_VOLUME_24H = 1000  # $1K minimum 24h volume — avoid moving illiquid markets
+FILL_SIZE = 2.0  # $2 per fill — split orders into small chunks to minimize market impact
 
 @dataclass
 class Opportunity:
@@ -122,6 +142,9 @@ class Strategy:
         self.min_liquidity = 100.0  # $100 floor: filter truly illiquid markets only
         self.max_edge_pct = config.max_edge_pct
 
+        # Cache of last-fetched PM markets (reused for merge scan)
+        self._last_pm_markets: list[dict] = []
+
         # MAKER order tracking for stale cancellation
         self._pending_maker_orders: list[dict] = []
         self.maker_order_ttl = 120  # Cancel unfilled MAKER orders after 2 minutes
@@ -133,6 +156,7 @@ class Strategy:
 
         # 1. Fetch Polymarket sports markets
         pm_markets = self.poly.get_active_sports_markets()
+        self._last_pm_markets = pm_markets  # Reuse for merge scan (avoid re-fetch)
         log.info("Step 1: %d Polymarket sports markets", len(pm_markets))
 
         # 2. Fetch sharp bookmaker odds (h2h + spreads + totals)
@@ -163,9 +187,9 @@ class Strategy:
             log.info("Edge filter breakdown (%d total, %d passed): %s",
                      total_edges, len(candidates), self._filter_counts)
 
-        # Sort: high-liq sports first, then by edge, tight spreads, volume, RN1 score
+        # Sort: best tier first, then by edge, tight spreads, volume, RN1 score
         candidates.sort(key=lambda x: (
-            0 if x.sport in HIGH_LIQ_SPORTS else 1,  # high-liq sports first
+            SPORT_TIER.get(x.sport, 4),  # Lower tier number = higher priority
             -(x.adjusted_edge or x.edge_pct),
             x.spread_bps,  # tighter spreads preferred
             -x.volume_24h,
@@ -189,7 +213,7 @@ class Strategy:
             adj = f" adj={opp.adjusted_edge:.1f}%" if opp.adjusted_edge is not None else ""
             rn1 = f" rn1={opp.rn1_score:.0f}" if opp.rn1_score > 0 else ""
             spr = f" spr={opp.spread_bps:.0f}bp" if opp.spread_bps > 0 else ""
-            liq = " HiLiq" if opp.sport in HIGH_LIQ_SPORTS else ""
+            liq = f" T{SPORT_TIER.get(opp.sport, 4)}"
             log.info("  #%d: %s [%s] (%s) | poly=%.3f fair=%.3f edge=+%.1f%%%s%s%s%s | $%.0f",
                      i + 1, opp.slug, opp.outcome, opp.market_type,
                      opp.poly_price, opp.fair_prob, opp.edge_pct, adj, rn1, spr, liq,
@@ -315,9 +339,11 @@ class Strategy:
         except Exception:
             pass  # Fall through if spread unavailable
 
-        # Check if already holding this position
-        if self.tracker.has_position(edge["token_id"]):
-            self._filter_counts["already_held"] = self._filter_counts.get("already_held", 0) + 1
+        # Position scaling: allow adding to existing positions up to MAX_POSITION_SCALE
+        existing_cost = self.tracker.get_position_cost(edge["token_id"])
+        max_per_market = self.config.max_position_usdc * MAX_POSITION_SCALE
+        if existing_cost >= max_per_market:
+            self._filter_counts["max_scaled"] = self._filter_counts.get("max_scaled", 0) + 1
             return None
 
         # Prevent contradictory positions (both sides of same game/line)
@@ -342,16 +368,29 @@ class Strategy:
                           pm["slug"], edge["edge_pct"], adjusted_edge)
                 return None
 
-        # Position sizing
+        # Position sizing — boost Kelly fraction for high-ROI sport tiers
         sizing_edge = adjusted_edge or edge["edge_pct"]
+        sport = pm.get("sport", "")
+        tier = SPORT_TIER.get(sport, 4)
+        kelly_boost = TIER_KELLY_BOOST.get(tier, 1.0)
+        boosted_kelly = self.config.kelly_fraction * kelly_boost
         size = self.risk.calculate_position_size(
             sizing_edge,
             edge["polymarket_price"],
-            kelly_fraction=self.config.kelly_fraction,
+            kelly_fraction=boosted_kelly,
         )
         if size < 1.0:
             self._filter_counts["size_below_min"] = self._filter_counts.get("size_below_min", 0) + 1
             return None
+
+        # Cap size so total position doesn't exceed max_per_market
+        if existing_cost > 0:
+            remaining = max_per_market - existing_cost
+            if remaining < 1.0:  # $1 minimum order
+                self._filter_counts["max_scaled"] = self._filter_counts.get("max_scaled", 0) + 1
+                return None
+            size = min(size, remaining)
+
         # Note: cumulative exposure limit enforced in scan() second pass
 
         # RN1 pattern score
@@ -389,12 +428,12 @@ class Strategy:
     def execute(self, opportunities: list[Opportunity]):
         """Place orders for opportunities.
 
-        Hybrid execution:
-        - If edge is high even at best ask (>= 2x min_edge), cross the spread
-          for immediate fill (TAKER).
-        - Otherwise, place MAKER limit at effective midpoint for better price,
-          accepting slower fills. Unfilled MAKER orders are cancelled after
-          MAKER_ORDER_TTL_SECONDS.
+        Hybrid execution with order fragmentation:
+        - TAKER orders are split into multiple small fills ($FILL_SIZE each)
+          to minimize market impact and walk the orderbook depth, mimicking
+          RN1's median $10.62 per fill across 10-30 fills per position.
+        - MAKER orders remain a single resting limit (they don't move the market).
+        - Unfilled MAKER orders are cancelled after MAKER_ORDER_TTL_SECONDS.
         """
         for opp in opportunities:
             try:
@@ -436,6 +475,13 @@ class Strategy:
                     order_price = mid
                     order_mode = "MAKER"
 
+                # ── TAKER: fragment into multiple small fills ────────────
+                if order_mode == "TAKER" and opp.size_usdc >= FILL_SIZE * 2:
+                    self._execute_fragmented_taker(opp, order_price, edge_at_ask,
+                                                   edge_at_mid, live_spread_bps)
+                    continue
+
+                # ── Single order path (MAKER or small TAKER) ────────────
                 shares = opp.size_usdc / order_price
 
                 result = self.poly.place_limit_order(
@@ -493,14 +539,147 @@ class Strategy:
                     usdc=opp.size_usdc,
                 )
 
-                log.info("ORDER [%s]: %s %s [%s] %.0f shares @ %.3f ($%.0f) "
+                # Tag scaling orders
+                is_scale = self.tracker.get_position_cost(opp.token_id) > opp.size_usdc
+                mode_tag = f"{order_mode}/SCALE" if is_scale else order_mode
+
+                log.info("ORDER [%s]: %s %s [%s] %.0f shares @ %.3f ($%.1f) "
                          "edge_ask=%.1f%% edge_mid=%.1f%% spread=%.0fbps vol=$%.0f",
-                         order_mode, opp.market_type.upper(), opp.slug, opp.outcome,
+                         mode_tag, opp.market_type.upper(), opp.slug, opp.outcome,
                          shares, order_price, opp.size_usdc,
                          edge_at_ask, edge_at_mid, live_spread_bps, opp.volume_24h)
 
             except Exception as e:
                 log.error("Order failed for %s: %s", opp.slug, e)
+
+    def _execute_fragmented_taker(self, opp: Opportunity, base_price: float,
+                                   edge_at_ask: float, edge_at_mid: float,
+                                   live_spread_bps: float):
+        """Split a TAKER order into multiple small fills to minimize market impact.
+
+        Mimics RN1's execution style: median $10.62 per fill across 10-30 fills.
+        Walks the orderbook by fetching ask levels and distributing fills across them.
+        Each fill is >= $1 (CLOB minimum) with a 0.3s delay between fills.
+        """
+        num_fills = max(1, int(opp.size_usdc / FILL_SIZE))
+        fill_usdc = opp.size_usdc / num_fills
+
+        # Ensure each fill meets CLOB minimum of $1
+        if fill_usdc < 1.0:
+            num_fills = max(1, int(opp.size_usdc))
+            fill_usdc = opp.size_usdc / num_fills
+
+        # Try to fetch orderbook for price levels to walk
+        ask_levels = []
+        try:
+            book = self.poly.get_orderbook(opp.token_id)
+            if book and hasattr(book, "asks") and book.asks:
+                ask_levels = sorted(book.asks, key=lambda lvl: float(lvl.price))
+            elif isinstance(book, dict) and book.get("asks"):
+                ask_levels = sorted(book["asks"],
+                                    key=lambda lvl: float(lvl.get("price", lvl.get("p", 0))))
+        except Exception:
+            pass  # Fall back to base_price for all fills
+
+        total_shares = 0.0
+        total_cost = 0.0
+        fills_placed = 0
+        ask_idx = 0
+        level_filled = 0.0  # Shares consumed at current ask level
+
+        for i in range(num_fills):
+            # Determine price for this fill: walk ask levels if available
+            if ask_levels and ask_idx < len(ask_levels):
+                lvl = ask_levels[ask_idx]
+                level_price = float(lvl.price if hasattr(lvl, "price")
+                                    else lvl.get("price", lvl.get("p", base_price)))
+                level_size = float(lvl.size if hasattr(lvl, "size")
+                                   else lvl.get("size", lvl.get("s", 0)))
+                fill_price = level_price
+                fill_shares = fill_usdc / fill_price
+                # If we've consumed this level's available size, move to next
+                if level_filled + fill_shares >= level_size and ask_idx + 1 < len(ask_levels):
+                    ask_idx += 1
+                    level_filled = 0.0
+                else:
+                    level_filled += fill_shares
+            else:
+                fill_price = base_price
+                fill_shares = fill_usdc / fill_price
+
+            try:
+                result = self.poly.place_limit_order(
+                    token_id=opp.token_id,
+                    price=fill_price,
+                    size=fill_shares,
+                    side="BUY",
+                    neg_risk=opp.neg_risk,
+                )
+
+                # Check actual fill price in live mode
+                actual_fill_price = fill_price
+                if not self.dry_run and isinstance(result, dict):
+                    fp = result.get("avgPrice") or result.get("price")
+                    if fp:
+                        actual_fill_price = float(fp)
+
+                total_shares += fill_shares
+                total_cost += fill_shares * actual_fill_price
+                fills_placed += 1
+
+                log.info("FILL %d/%d: %s [%s] %.0f shares @ %.3f ($%.1f)",
+                         fills_placed, num_fills, opp.slug, opp.outcome,
+                         fill_shares, actual_fill_price, fill_usdc)
+
+            except Exception as e:
+                log.warning("Fill %d/%d failed for %s: %s", i + 1, num_fills, opp.slug, e)
+
+            # Delay between fills (skip after last fill)
+            if i < num_fills - 1:
+                time.sleep(0.3)
+
+        if fills_placed == 0:
+            log.error("All fills failed for %s [%s]", opp.slug, opp.outcome)
+            return
+
+        # Calculate volume-weighted average entry price
+        avg_price = total_cost / total_shares if total_shares > 0 else base_price
+        actual_usdc = total_shares * avg_price
+
+        # Track position ONCE with aggregate values
+        self.tracker.open_position(
+            token_id=opp.token_id,
+            slug=opp.slug,
+            outcome=opp.outcome,
+            sport=opp.sport,
+            market_type=opp.market_type,
+            entry_price=avg_price,
+            fair_prob=opp.fair_prob,
+            edge_pct=opp.edge_pct,
+            shares=total_shares,
+            cost_usdc=actual_usdc,
+            bookmaker=opp.bookmaker,
+        )
+
+        self.risk.record_trade(
+            token_id=opp.token_id,
+            outcome=opp.outcome,
+            slug=opp.slug,
+            side="BUY",
+            size=total_shares,
+            price=avg_price,
+            usdc=actual_usdc,
+        )
+
+        # Tag scaling orders
+        is_scale = self.tracker.get_position_cost(opp.token_id) > actual_usdc
+        mode_tag = "TAKER %d fills/SCALE" % fills_placed if is_scale else "TAKER %d fills" % fills_placed
+
+        log.info("ORDER [%s]: %s %s [%s] %.0f shares @ %.3f avg ($%.1f) "
+                 "edge_ask=%.1f%% edge_mid=%.1f%% spread=%.0fbps vol=$%.0f",
+                 mode_tag, opp.market_type.upper(), opp.slug, opp.outcome,
+                 total_shares, avg_price, actual_usdc,
+                 edge_at_ask, edge_at_mid, live_spread_bps, opp.volume_24h)
 
     def check_resolutions(self):
         """Check if any open positions have resolved and feed results to learning agent."""
@@ -588,18 +767,23 @@ class Strategy:
                 if opps:
                     self.execute(opps)
 
-                # Scan for merge opportunities (every 3rd cycle to save API calls)
-                if self._merge and cycle % 3 == 0:
-                    merge_markets = self.poly.get_active_sports_markets()
-                    merge_opps = self.scan_merges(merge_markets)
+                # Scan for merge opportunities (every cycle — merges are risk-free)
+                if self._merge:
+                    merge_opps = self.scan_merges(self._last_pm_markets)
                     if merge_opps:
                         log.info("Found %d merge opportunities", len(merge_opps))
                         executed = self._merge.scan_and_execute(
-                            markets=merge_markets,
-                            max_usdc_per_merge=self.config.max_position_usdc,
+                            markets=self._last_pm_markets,
+                        )
+                        batch_profit = sum(
+                            ex.get("expected_profit", 0)
+                            for ex in executed
+                            if ex.get("success")
                         )
                         for ex in executed:
-                            log.info("MERGE: %s profit=$%.4f", ex.get("slug", ""), ex.get("profit", 0))
+                            log.info("MERGE: %s profit=$%.4f", ex.get("slug", ""), ex.get("expected_profit", 0))
+                        if batch_profit > 0:
+                            log.info("Merge batch total estimated profit: $%.4f", batch_profit)
 
                 # Log portfolio state
                 summary = self.tracker.summary()

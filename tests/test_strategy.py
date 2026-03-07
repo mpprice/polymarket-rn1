@@ -51,6 +51,7 @@ def _make_strategy():
         tracker_inst = MagicMock()
         tracker_inst.positions = {}
         tracker_inst.has_position = MagicMock(return_value=False)
+        tracker_inst.get_position_cost = MagicMock(return_value=0.0)
         MockTracker.return_value = tracker_inst
 
         strat = Strategy(cfg, dry_run=True)
@@ -227,15 +228,30 @@ class TestEvaluateEdge:
         assert opp is not None
         assert opp.volume_24h == 10000.0
 
-    def test_already_held_token_filtered(self, strat):
+    def test_max_scaled_position_filtered(self, strat):
+        """Position at max scale (3x max_position_usdc) should be filtered."""
         strat._pending_exposure = 0.0
         strat._filter_counts = {}
-        strat.tracker.has_position = MagicMock(return_value=True)
+        # max_position_usdc=8, MAX_POSITION_SCALE=3 => max=24
+        strat.tracker.get_position_cost = MagicMock(return_value=24.0)
         m = _make_match()
         e = _make_edge()
         opp = strat._evaluate_edge(m, e)
         assert opp is None
-        assert strat._filter_counts.get("already_held", 0) == 1
+        assert strat._filter_counts.get("max_scaled", 0) == 1
+
+    def test_scaling_into_existing_position_allowed(self, strat):
+        """Position below max scale should allow adding more."""
+        strat._pending_exposure = 0.0
+        strat._filter_counts = {}
+        # Existing $8 position, max is $24, so $16 remaining
+        strat.tracker.get_position_cost = MagicMock(return_value=8.0)
+        m = _make_match()
+        e = _make_edge()
+        opp = strat._evaluate_edge(m, e)
+        assert opp is not None
+        # Size should be capped to remaining ($16), but risk.calculate_position_size returns 5.0
+        assert opp.size_usdc == 5.0
 
     def test_conflicting_position_filtered(self, strat):
         strat._pending_exposure = 0.0

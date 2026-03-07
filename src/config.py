@@ -69,7 +69,7 @@ class Config:
 
     # Merge arbitrage
     merge_enabled: bool = field(default_factory=lambda: _env_bool("MERGE_ENABLED", "true"))
-    min_merge_profit: float = field(default_factory=lambda: _env_float("MIN_MERGE_PROFIT", "0.02"))
+    min_merge_profit: float = field(default_factory=lambda: _env_float("MIN_MERGE_PROFIT", "0.005"))
 
     # Sports categories to monitor (matching Polymarket slugs)
     # Extended from RN1 analysis — most profitable sports first

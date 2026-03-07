@@ -32,7 +32,8 @@ log = logging.getLogger(__name__)
 GAS_PER_TXN = 0.01          # ~$0.01 per Polygon txn
 NUM_TXNS_PER_MERGE = 3       # buy YES + buy NO + merge
 TOTAL_GAS_COST = GAS_PER_TXN * NUM_TXNS_PER_MERGE  # $0.03
-MIN_PROFIT_PER_PAIR = 0.02   # Minimum $0.02/pair to cover gas + margin
+MIN_PROFIT_PER_PAIR = 0.005  # $0.005/pair — merges are risk-free, even small profits add up
+MAX_MERGE_USDC = 25.0        # Merges are risk-free, size bigger than directional ($8)
 
 
 @dataclass
@@ -366,21 +367,26 @@ class MergeStrategy:
     def scan_and_execute(
         self,
         markets: list[dict],
-        max_usdc_per_merge: float = 50.0,
+        max_usdc_per_merge: float = None,
     ) -> list[dict]:
         """Scan for merge opportunities and execute the best ones.
 
         Args:
             markets: Markets to scan (from PolymarketClient).
             max_usdc_per_merge: Maximum USDC to deploy per merge.
+                Defaults to MAX_MERGE_USDC ($25).
 
         Returns:
             List of execution result dicts.
         """
+        if max_usdc_per_merge is None:
+            max_usdc_per_merge = MAX_MERGE_USDC
+
         opportunities = self.scan_merge_opportunities(markets)
 
         if not opportunities:
-            log.info("No merge opportunities found this cycle")
+            log.info("Merge scan: %d markets checked, 0 candidates (min_profit=%.3f)",
+                     len(markets), self.min_profit_per_pair)
             return []
 
         results = []
