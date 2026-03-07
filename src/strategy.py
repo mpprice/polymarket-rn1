@@ -35,12 +35,10 @@ from .position_tracker import PositionTracker
 MAX_POSITION_SCALE = 3  # Can hold up to 3x max_position_usdc per market
 MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
 MAX_SPREAD_BPS = 300  # Skip markets where bid-ask spread exceeds edge
-# Sub-market slug patterns to exclude (phantom edges from comparing sub-market to match-winner odds)
-SUB_MARKET_PATTERNS = (
-    "-first-set-", "-set-handicap-", "-set-totals-", "-match-total-",
-    "-first-half-", "-second-half-", "-first-quarter-", "-1st-set-",
-    "-2nd-set-", "-3rd-set-", "-first-5-innings-", "-first-period-",
-)
+# Sub-market filter disabled — RN1 actively trades and merges sub-markets
+# (game2, total-games, etc.) especially in esports. Keeping the constant
+# for reference but no longer filtering.
+SUB_MARKET_PATTERNS = ()
 # High-liquidity sports (kept for backward compat in external imports)
 HIGH_LIQ_SPORTS = {"nba", "nfl", "nhl", "epl", "ucl", "bun", "lal", "sea", "fl1", "mlb", "efa"}
 
