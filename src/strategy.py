@@ -35,10 +35,14 @@ from .position_tracker import PositionTracker
 MAX_POSITION_SCALE = 3  # Can hold up to 3x max_position_usdc per market
 MAX_DAYS_TO_EVENT = 10  # Balance capital recycling vs trade count
 MAX_SPREAD_BPS = 300  # Skip markets where bid-ask spread exceeds edge
-# Sub-market filter disabled — RN1 actively trades and merges sub-markets
-# (game2, total-games, etc.) especially in esports. Keeping the constant
-# for reference but no longer filtering.
-SUB_MARKET_PATTERNS = ()
+# Sub-market patterns that create phantom edges for DIRECTIONAL trades
+# (comparing sub-market price to match-winner odds gives false edges).
+# These are still scanned for MERGE arbitrage (risk-free).
+SUB_MARKET_PATTERNS = (
+    "-first-set-", "-set-handicap-", "-set-totals-", "-match-total-",
+    "-first-half-", "-second-half-", "-first-quarter-", "-1st-set-",
+    "-2nd-set-", "-3rd-set-", "-first-5-innings-", "-first-period-",
+)
 # High-liquidity sports (kept for backward compat in external imports)
 HIGH_LIQ_SPORTS = {"nba", "nfl", "nhl", "epl", "ucl", "bun", "lal", "sea", "fl1", "mlb", "efa"}
 
@@ -766,12 +770,14 @@ class Strategy:
                     self.execute(opps)
 
                 # Scan for merge opportunities (every cycle — merges are risk-free)
+                # Use wider market set: all active binary sports markets (not just near-term)
                 if self._merge:
-                    merge_opps = self.scan_merges(self._last_pm_markets)
+                    merge_markets = self.poly.get_all_binary_markets(limit=500)
+                    merge_opps = self.scan_merges(merge_markets)
                     if merge_opps:
                         log.info("Found %d merge opportunities", len(merge_opps))
                         executed = self._merge.scan_and_execute(
-                            markets=self._last_pm_markets,
+                            markets=merge_markets,
                         )
                         batch_profit = sum(
                             ex.get("expected_profit", 0)

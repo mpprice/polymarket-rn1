@@ -162,6 +162,52 @@ class PolymarketClient:
             "active": m.get("active", True),
         }
 
+    def get_all_binary_markets(self, limit: int = 500) -> list[dict]:
+        """Fetch a wide set of active binary markets for merge scanning.
+
+        Unlike get_active_sports_markets (sport-filtered, near-term),
+        this fetches ALL active sports markets regardless of time horizon.
+        Merges are risk-free so we can scan further out (15+ days).
+        """
+        url = f"{self.config.gamma_url}/markets"
+        all_markets = []
+        offset = 0
+        while offset < limit:
+            batch_size = min(100, limit - offset)
+            params = {
+                "active": "true",
+                "closed": "false",
+                "limit": batch_size,
+                "offset": offset,
+                "tag_id": 1,  # tag 1 = Sports
+            }
+            try:
+                resp = self._session.get(url, params=params, timeout=15)
+                resp.raise_for_status()
+                batch = resp.json()
+                if not batch:
+                    break
+                for m in batch:
+                    # Only binary markets (exactly 2 tokens) are mergeable
+                    tids = m.get("clobTokenIds", "[]")
+                    if isinstance(tids, str):
+                        import json as _json
+                        tids = _json.loads(tids)
+                    if len(tids) != 2:
+                        continue
+                    # Extract sport from slug
+                    slug = m.get("slug", "")
+                    sport = slug.split("-")[0] if "-" in slug else ""
+                    all_markets.append(self._parse_market(m, sport))
+                offset += batch_size
+                if len(batch) < batch_size:
+                    break
+            except Exception as e:
+                log.warning("Failed to fetch merge markets (offset=%d): %s", offset, e)
+                break
+        log.info("Fetched %d binary markets for merge scanning", len(all_markets))
+        return all_markets
+
     # ── Pricing ─────────────────────────────────────────────────────
 
     def get_orderbook(self, token_id: str) -> dict:
