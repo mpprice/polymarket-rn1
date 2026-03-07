@@ -2016,6 +2016,9 @@ function sortTable(tableId, colIdx) {
   rows.forEach(r => tbody.appendChild(r));
 }
 
+// --- Collapsed date group state (persists across refreshAll rebuilds) ---
+const collapsedGroups = new Set();  // keys: "tableId::date"
+
 // --- Toggle date group collapse ---
 function toggleDateGroup(btn) {
   const dateKey = btn.getAttribute('data-date');
@@ -2029,6 +2032,28 @@ function toggleDateGroup(btn) {
   rows.forEach(r => r.style.display = collapsed ? '' : 'none');
   btn.setAttribute('data-collapsed', collapsed ? '0' : '1');
   btn.textContent = collapsed ? '\u25BC' : '\u25B6';
+  // Persist state
+  const stateKey = tableId + '::' + dateKey;
+  if (collapsed) { collapsedGroups.delete(stateKey); } else { collapsedGroups.add(stateKey); }
+}
+
+// --- Restore collapsed state after innerHTML rebuild ---
+function restoreCollapsedGroups(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const btns = table.querySelectorAll('.dg-btn');
+  btns.forEach(btn => {
+    const dateKey = btn.getAttribute('data-date');
+    const stateKey = tableId + '::' + dateKey;
+    if (collapsedGroups.has(stateKey)) {
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll('tr[data-date="' + dateKey + '"]');
+      rows.forEach(r => r.style.display = 'none');
+      btn.setAttribute('data-collapsed', '1');
+      btn.textContent = '\u25B6';
+    }
+  });
 }
 
 // --- Sort activity tables (skips group header + total rows) ---
@@ -2459,6 +2484,7 @@ async function refreshAll() {
         }).join('');
       });
       openedTbody.innerHTML = oHtml;
+      restoreCollapsedGroups('opened-table');
     } else {
       openedEmpty.style.display = 'block';
       openedTbody.innerHTML = '';
@@ -2525,6 +2551,7 @@ async function refreshAll() {
         }).join('');
       });
       resolvedTbody2.innerHTML = r2Html;
+      restoreCollapsedGroups('resolved-table2');
     } else {
       resolvedEmpty2.style.display = 'block';
       resolvedTbody2.innerHTML = '';
